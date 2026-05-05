@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.RestAssured;
 import io.restassured.config.ObjectMapperConfig;
 import io.restassured.config.RestAssuredConfig;
+import io.restassured.specification.RequestSpecification;
 import org.eclipse.edc.connector.controlplane.test.system.utils.client.ManagementApiClientV5;
 import org.eclipse.edc.connector.controlplane.test.system.utils.client.api.model.AssetDto;
 import org.eclipse.edc.connector.controlplane.test.system.utils.client.api.model.AtomicConstraintDto;
@@ -36,7 +37,6 @@ import org.eclipse.edc.spi.monitor.ConsoleMonitor;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;
 import java.util.HashMap;
@@ -63,28 +63,15 @@ import static org.eclipse.edc.jad.tests.KeycloakApi.getAccessToken;
  */
 @EndToEndTest
 public class DataTransferEndToEndTest {
-
-
     private static final String VAULT_TOKEN = "root";
 
     private static final ConsoleMonitor MONITOR = new ConsoleMonitor(ConsoleMonitor.Level.DEBUG, true);
     private static final DynamicTokenProvider DYNAMIC_TOKEN_PROVIDER = new DynamicTokenProvider();
-    private static final ManagementApiClientV5 MANAGEMENT_API_CLIENT = new ManagementApiClientV5(DYNAMIC_TOKEN_PROVIDER, new LazySupplier<>(() -> URI.create(CONTROLPLANE_BASE_URL + "/api/mgmt")));
+    private static final ManagementApiClientV5 MANAGEMENT_API_CLIENT = new ManagementApiClientV5(DYNAMIC_TOKEN_PROVIDER, new LazySupplier<>(() -> URI.create(CONTROLPLANE_BASE_URL)));
     private static ClientCredentials providerCredentials;
     private static ClientCredentials consumerCredentials;
     private static String providerContextId;
     private static ClientCredentials manufacturerCredentials;
-
-    static String loadResourceFile(String resourceName) {
-        try (var is = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourceName)) {
-            if (is == null) {
-                throw new RuntimeException("Resource not found: " + resourceName);
-            }
-            return new String(is.readAllBytes());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     @BeforeAll
     static void prepare() {
@@ -155,13 +142,26 @@ public class DataTransferEndToEndTest {
      *
      * @return the Cell ID
      */
-    private static String getCellId() {
-        return given()
+    public static String getCellId() {
+        return apiRequest()
                 .contentType(APPLICATION_JSON)
-                .get(TM_BASE_URL + "/api/v1alpha1/cells")
+                .get(TM_BASE_URL + "/cells")
                 .then()
                 .statusCode(200)
                 .extract().jsonPath().getString("[0].id");
+    }
+
+    public static RequestSpecification participantRequest() {
+        return given()
+                .header("Authorization", "Bearer " + DYNAMIC_TOKEN_PROVIDER.createToken(providerCredentials.clientId(), "participant"));
+    }
+
+    /**
+     * Creates an authenticated request for any of the Administration APIs (hitting the "single pane of glass")
+     */
+    public static RequestSpecification apiRequest() {
+        return given()
+                .header("Authorization", "Bearer " + DYNAMIC_TOKEN_PROVIDER.createToken(null, "admin"));
     }
 
     @Test
@@ -188,7 +188,7 @@ public class DataTransferEndToEndTest {
 
         MONITOR.info("Fetching siglet token for transferId: " + transferId);
 
-        var transferResponse = given()
+        var transferResponse = apiRequest()
                 .baseUri(SIGLET_BASE_URL)
                 .get("/tokens/%s/%s".formatted(consumerCredentials.clientId(), transferId))
                 .then()
@@ -202,7 +202,7 @@ public class DataTransferEndToEndTest {
                 .header("Authorization", "Bearer " + accessToken)
                 .body("{}")
                 .contentType("application/json")
-                .post("/app/public/api/data/certs/request")
+                .post("/api/dp/certs/api/data/certs/request")
                 .then()
                 .statusCode(200)
                 .extract().body().as(List.class);
@@ -242,7 +242,7 @@ public class DataTransferEndToEndTest {
 
         MONITOR.info("Fetching siglet token for transferId: " + transferId);
 
-        var transferResponse = given()
+        var transferResponse = apiRequest()
                 .baseUri(SIGLET_BASE_URL)
                 .get("/tokens/%s/%s".formatted(manufacturerCredentials.clientId(), transferId))
                 .then()
@@ -256,7 +256,7 @@ public class DataTransferEndToEndTest {
                 .header("Authorization", "Bearer " + accessToken)
                 .body("{}")
                 .contentType("application/json")
-                .post("/app/public/api/data/certs/request")
+                .post("/api/dp/certs/api/data/certs/request")
                 .then()
                 .statusCode(200)
                 .extract().body().as(List.class);
@@ -299,9 +299,9 @@ public class DataTransferEndToEndTest {
         return MANAGEMENT_API_CLIENT.policies().createPolicyDefinition(participantContextId, new PolicyDefinitionDto(policy));
     }
 
-    private String createContractDef(String participantContextId, String accessPolicyId, String contractPolicyId, String assetId) {
+    private void createContractDef(String participantContextId, String accessPolicyId, String contractPolicyId, String assetId) {
         var selector = new CriterionDto("https://w3id.org/edc/v0.0.1/ns/id", "=", assetId);
         var contractDef = new ContractDefinitionDto(accessPolicyId, contractPolicyId, List.of(selector));
-        return MANAGEMENT_API_CLIENT.contractDefinitions().createContractDefinition(participantContextId, contractDef);
+        MANAGEMENT_API_CLIENT.contractDefinitions().createContractDefinition(participantContextId, contractDef);
     }
 }

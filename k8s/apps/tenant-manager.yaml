@@ -81,12 +81,23 @@ spec:
       kind: Gateway
       sectionName: http
   hostnames:
-    - tm.localhost
+    - jad.localhost
   rules:
     - matches:
         - path:
             type: PathPrefix
-            value: /
+            value: /api/tm
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /api/v1alpha1
+        - type: ExtensionRef
+          extensionRef:
+            group: traefik.io
+            kind: Middleware
+            name: jwt-auth-tenant-manager-api
       backendRefs:
         - name: tenant-manager
           port: 8080

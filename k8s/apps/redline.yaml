@@ -95,12 +95,18 @@ spec:
       kind: Gateway
       sectionName: http
   hostnames:
-    - redline.localhost
+    - jad.localhost
   rules:
     - matches:
         - path:
             type: PathPrefix
-            value: /
+            value: /redline
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
       backendRefs:
         - name: redline
           port: 8081

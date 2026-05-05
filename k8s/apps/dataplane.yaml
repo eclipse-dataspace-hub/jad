@@ -112,13 +112,13 @@ spec:
     - name: edcv-gateway
       namespace: edc-v
   hostnames:
-    - dp.localhost
+    - jad.localhost
   rules:
-    # /dp/public → public port 11002
+    # /api/dp/public → public port 11002 (data transfer API)
     - matches:
         - path:
             type: PathPrefix
-            value: /public
+            value: /api/dp/public
       filters:
         - type: URLRewrite
           urlRewrite:
@@ -130,11 +130,11 @@ spec:
           port: 11002
           weight: 1
 
-    # /app/internal → control port 8083
+    # /api/dp/control → control port 8083 (internal control API)
     - matches:
         - path:
             type: PathPrefix
-            value: /app/internal
+            value: /api/dp/control
       filters:
         - type: URLRewrite
           urlRewrite:
@@ -146,11 +146,11 @@ spec:
           port: 8083
           weight: 1
 
-    # /app/public → certs port 8186
+    # /api/dp/certs → certs port 8186 (data/certificate API)
     - matches:
         - path:
             type: PathPrefix
-            value: /app/public
+            value: /api/dp/certs
       filters:
         - type: URLRewrite
           urlRewrite:

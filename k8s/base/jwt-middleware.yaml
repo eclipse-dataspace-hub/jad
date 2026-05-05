@@ -1,0 +1,104 @@
+#
+# Copyright (c) 2025 Metaform Systems, Inc.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License, Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Contributors:
+#      Metaform Systems, Inc. - initial API and implementation
+#
+
+# Traefik ForwardAuth middlewares that validate Bearer tokens via the clearglass
+# service, which calls Keycloak's RFC 7662 token introspection endpoint and
+# checks the required scopes.
+#
+# Each middleware passes ?scope= query params to clearglass; the token must
+# carry at least one of the listed scopes for the request to be allowed.
+
+---
+# requires that all requests targeting the management API be authenticated and have the appropriate scopes
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: jwt-auth-management-api
+  namespace: edc-v
+spec:
+  forwardAuth:
+    address: http://clearglass.edc-v.svc.cluster.local:8080/validate?scope=management-api:read&scope=management-api:write
+    authRequestHeaders:
+      - Authorization
+    trustForwardHeader: true
+
+---
+# requires that all requests targeting the Identity API be authenticated and have the appropriate scopes
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: jwt-auth-identity-api
+  namespace: edc-v
+spec:
+  forwardAuth:
+    address: http://clearglass.edc-v.svc.cluster.local:8080/validate?scope=identity-api:read&scope=identity-api:write
+    authRequestHeaders:
+      - Authorization
+    trustForwardHeader: true
+
+---
+# requires that all requests targeting the IssuerAdmin API be authenticated and have the appropriate scopes
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: jwt-auth-issuer-admin-api
+  namespace: edc-v
+spec:
+  forwardAuth:
+    address: http://clearglass.edc-v.svc.cluster.local:8080/validate?scope=issuer-admin-api:read&scope=issuer-admin-api:write
+    authRequestHeaders:
+      - Authorization
+    trustForwardHeader: true
+
+---
+# requires all requests to the CFM Tenant Manager to be authenticated and have the appropriate scopes
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: jwt-auth-tenant-manager-api
+  namespace: edc-v
+spec:
+  forwardAuth:
+    address: http://clearglass.edc-v.svc.cluster.local:8080/validate?scope=tenant-manager-api:read&scope=tenant-manager-api:write
+    authRequestHeaders:
+      - Authorization
+    trustForwardHeader: true
+
+---
+# requires all requests to the CFM Provision Manager to be authenticated and have the appropriate scopes
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: jwt-auth-provision-manager-api
+  namespace: edc-v
+spec:
+  forwardAuth:
+    address: http://clearglass.edc-v.svc.cluster.local:8080/validate?scope=provision-manager-api:read&scope=provision-manager-api:write
+    authRequestHeaders:
+      - Authorization
+    trustForwardHeader: true
+
+
+---
+# requires all requests to the CFM Provision Manager to be authenticated and have the appropriate scopes
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: jwt-auth-siglet-api
+  namespace: edc-v
+spec:
+  forwardAuth:
+    address: http://clearglass.edc-v.svc.cluster.local:8080/validate?scope=siglet-api:read
+    authRequestHeaders:
+      - Authorization
+    trustForwardHeader: true

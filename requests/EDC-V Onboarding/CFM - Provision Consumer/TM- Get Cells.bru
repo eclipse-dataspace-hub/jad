@@ -5,9 +5,15 @@ meta {
 }
 
 get {
-  url: {{tmBaseUrl}}/api/v1alpha1/cells
+  url: {{tmBaseUrl}}/cells
   body: json
   auth: inherit
+}
+
+body:json {
+  
+  
+  
 }
 
 script:post-response {

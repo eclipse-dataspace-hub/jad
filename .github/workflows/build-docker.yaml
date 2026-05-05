@@ -41,6 +41,9 @@ jobs:
           - name: dataplane
             context: launchers/dataplane
             dockerfile: launchers/dataplane/src/main/docker/Dockerfile
+          - name: clearglass
+            context: clearglass
+            dockerfile: clearglass/Dockerfile
 
     steps:
       - name: Checkout code
