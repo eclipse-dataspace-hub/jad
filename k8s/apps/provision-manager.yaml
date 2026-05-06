@@ -92,7 +92,7 @@ spec:
           urlRewrite:
             path:
               type: ReplacePrefixMatch
-              replacePrefixMatch: /api/v1alpha
+              replacePrefixMatch: /api/v1alpha1
         - type: ExtensionRef
           extensionRef:
             group: traefik.io

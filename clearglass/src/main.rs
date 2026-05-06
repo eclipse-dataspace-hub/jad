@@ -338,9 +338,7 @@ mod tests {
     #[tokio::test]
     async fn empty_scope_value_is_ignored() {
         let (_, proxy) = setup_mock(true, "").await;
-        // scope= with no value: split_once('=') yields ("scope", ""), which is empty
-        // but it's still added to required. The token has no scopes either.
-        // With empty string in required and empty scope set, .any() won't match → 403
+        // no required scope, no scope in token
         let resp = proxy.handle_validate(Some("Bearer tok"), "scope=").await;
         assert_eq!(resp.status(), StatusCode::FORBIDDEN);
     }
