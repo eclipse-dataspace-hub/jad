@@ -35,7 +35,7 @@ spec:
     spec:
       containers:
         - name: controlplane
-          image: ghcr.io/metaform/jad/controlplane:latest
+          image: ghcr.io/eclipse-dataspace-hub/jad/controlplane:latest
           imagePullPolicy: Always
           envFrom:
             - configMapRef: { name: controlplane-config }

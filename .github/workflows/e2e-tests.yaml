@@ -58,10 +58,10 @@ jobs:
 
       - name: "Load runtime images into KinD"
         run: |-
-          kind load docker-image -n jad ghcr.io/metaform/jad/controlplane:latest \
-                                ghcr.io/metaform/jad/dataplane:latest \
-                                ghcr.io/metaform/jad/identity-hub:latest \
-                                ghcr.io/metaform/jad/issuerservice:latest
+          kind load docker-image -n jad ghcr.io/eclipse-dataspace-hub/jad/controlplane:latest \
+                                ghcr.io/eclipse-dataspace-hub/jad/dataplane:latest \
+                                ghcr.io/eclipse-dataspace-hub/jad/identity-hub:latest \
+                                ghcr.io/eclipse-dataspace-hub/jad/issuerservice:latest
 
 
       - name: "Install Traefik Gateway controller"

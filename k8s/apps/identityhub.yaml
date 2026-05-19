@@ -34,7 +34,7 @@ spec:
     spec:
       containers:
         - name: identityhub
-          image: ghcr.io/metaform/jad/identity-hub:latest
+          image: ghcr.io/eclipse-dataspace-hub/jad/identity-hub:latest
           imagePullPolicy: Always
           envFrom:
             - configMapRef:

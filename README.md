@@ -131,7 +131,7 @@ traefik   LoadBalancer   10.96.251.221   172.18.0.3    80:31415/TCP,443:31650/TC
 
 #### 2.1 Option 1: Use pre-built images
 
-There are pre-built images for all JAD apps available from [GHCR](https://github.com/Metaform/jad/packages) and the
+There are pre-built images for all JAD apps available from [GHCR](https://github.com/eclipse-dataspace-hub/jad/packages) and the
 Connector Fabric Manager images are available from
 the [CFM GitHub Repository](https://github.com/eclipse-cfm/cfm/packages). Those are tested and we
 strongly recommend using them.
@@ -155,16 +155,16 @@ and now want to see it in action, please follow the following steps to build and
 
   ```shell
   kind load docker-image \
-      ghcr.io/metaform/jad/controlplane:latest \
-      ghcr.io/metaform/jad/identity-hub:latest \
-      ghcr.io/metaform/jad/issuerservice:latest \
-      ghcr.io/metaform/jad/dataplane:latest -n edcv
+      ghcr.io/eclipse-dataspace-hub/jad/controlplane:latest \
+      ghcr.io/eclipse-dataspace-hub/jad/identity-hub:latest \
+      ghcr.io/eclipse-dataspace-hub/jad/issuerservice:latest \
+      ghcr.io/eclipse-dataspace-hub/jad/dataplane:latest -n edcv
   ```
 
   or if you're a bash God:
 
   ```shell
-  kind load docker-image -n edcv $(docker images --format "{{.Repository}}:{{.Tag}}" | grep '^ghcr.io/metaform/jad.*:latest')
+  kind load docker-image -n edcv $(docker images --format "{{.Repository}}:{{.Tag}}" | grep '^ghcr.io/eclipse-dataspace-hub/jad.*:latest')
   ```
 
 - build CFM docker images locally:
