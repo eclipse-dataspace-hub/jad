@@ -41,12 +41,8 @@ spec:
             - containerPort: 8080
               name: http
           env:
-            - name: TOKEN_INTROSPECTION_URL
-              value: http://keycloak.edc-v.svc.cluster.local:8080/realms/edcv/protocol/openid-connect/token/introspect
-            - name: INTROSPECT_CLIENT_ID
-              value: clearglass
-            - name: INTROSPECT_CLIENT_SECRET
-              value: clearglass-secret
+            - name: JWKS_URL
+              value: http://keycloak.edc-v.svc.cluster.local:8080/realms/edcv/protocol/openid-connect/certs
           livenessProbe:
             httpGet:
               path: /healthz
