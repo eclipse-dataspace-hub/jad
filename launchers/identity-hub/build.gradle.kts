@@ -28,6 +28,7 @@ dependencies {
     runtimeOnly(libs.edc.monitor.console)
     runtimeOnly(libs.edc.monitor.otel)
     runtimeOnly(libs.edc.events.nats)
+    runtimeOnly(libs.edc.vault.transit)
 
     runtimeOnly(libs.opentelemetry.exporter.otlp)
 }

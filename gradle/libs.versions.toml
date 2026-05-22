@@ -44,6 +44,7 @@ edc-fixtures-mgmtapi = { module = "org.eclipse.edc:management-api-test-fixtures"
 edc-monitor-otel = { module = "org.eclipse.edc:otel-monitor", version.ref = "edc" }
 edc-monitor-console = { module = "org.eclipse.edc:console-monitor", version.ref = "edc" }
 edc-events-nats = { module = "org.eclipse.edc:events-nats", version.ref = "edc" }
+edc-vault-transit = { module = "org.eclipse.edc:identity-hub-keypairs-transit", version.ref = "edc" }
 
 # EDC spi dependencies
 edc-spi-web = { module = "org.eclipse.edc:web-spi", version.ref = "edc" }
