@@ -98,10 +98,10 @@ jobs:
       - name: "Deploy JAD applications"
         run: |-
           # this is crucial - without it, KinD would take the prebuilt images from GHCR
-          sed -i "s/imagePullPolicy:.*Always/imagePullPolicy: Never/g" k8s/apps/controlplane.yaml
-          sed -i "s/imagePullPolicy:.*Always/imagePullPolicy: Never/g" k8s/apps/dataplane.yaml
-          sed -i "s/imagePullPolicy:.*Always/imagePullPolicy: Never/g" k8s/apps/issuerservice.yaml
-          sed -i "s/imagePullPolicy:.*Always/imagePullPolicy: Never/g" k8s/apps/identityhub.yaml
+          sed -i "s/imagePullPolicy:.*Always/imagePullPolicy: Never/g" k8s/apps/edc/controlplane.yaml
+          sed -i "s/imagePullPolicy:.*Always/imagePullPolicy: Never/g" k8s/apps/edc/dataplane.yaml
+          sed -i "s/imagePullPolicy:.*Always/imagePullPolicy: Never/g" k8s/apps/edc/issuerservice.yaml
+          sed -i "s/imagePullPolicy:.*Always/imagePullPolicy: Never/g" k8s/apps/edc/identityhub.yaml
           
           kubectl apply -k k8s/apps
 
