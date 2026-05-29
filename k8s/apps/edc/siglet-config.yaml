@@ -28,6 +28,8 @@ data:
     endpoint_type = "HTTP"
     endpoint = "http://provider:8080/data"
     token_source = "provider"
+    [signaling_auth]
+    mode = "disabled"
 
 # Vault Agent configuration for Siglet
 ---
