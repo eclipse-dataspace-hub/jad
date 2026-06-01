@@ -28,3 +28,7 @@ data:
     httpport: 8080
     postgres: true
     dsn: postgres://cfm:cfm@postgres.edc-v.svc.cluster.local:5432/cfm?sslmode=disable
+    auth.enabled: true
+    auth.discoveryUrl: http://keycloak.edc-v.svc.cluster.local:8080/realms/edcv
+    auth.rolesClaim: role
+    auth.audienceClaim: azp
