@@ -12,6 +12,8 @@
 #
 
 resources:
-  - infra
-  - telemetry
-  - security
+  - jaeger.yaml
+  - loki.yaml
+  - prometheus.yaml
+  - grafana.yaml
+  - telemetry-config.yaml

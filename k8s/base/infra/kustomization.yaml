@@ -12,6 +12,11 @@
 #
 
 resources:
-  - infra
-  - telemetry
-  - security
+  - edcv-namespace.yaml
+  - gateway-class.yaml
+  - gateway.yaml
+  - nats.yaml
+  - postgres.yaml
+  - clearglass.yaml
+  - vault.yaml
+  - keycloak.yaml

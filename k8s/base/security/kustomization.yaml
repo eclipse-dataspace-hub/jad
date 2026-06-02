@@ -12,6 +12,4 @@
 #
 
 resources:
-  - infra
-  - telemetry
-  - security
+  - jwt-middleware.yaml
