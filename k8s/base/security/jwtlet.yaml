@@ -52,9 +52,11 @@ spec:
             sleep 2
           done
           echo "Vault is ready"
-      containers:
+      # Native sidecar: starts and stays running before the main containers,
+      # writing the Vault token to /vault/secrets/.vault-token.
       - name: vault-agent
         image: hashicorp/vault:latest
+        restartPolicy: Always
         securityContext:
           capabilities:
             add:
@@ -75,18 +77,26 @@ spec:
           limits:
             memory: "128Mi"
             cpu: "100m"
-      - name: jwtlet
-        image: ghcr.io/eclipse-cfm/jwtlet:latest
+      # The jwtlet image is distroless (no shell), so the wait-for-token loop
+      # lives here in busybox rather than in the jwtlet container's command.
+      - name: wait-for-vault-token
+        image: busybox:1.36
         command:
         - sh
         - -c
         - |
           echo "Waiting for Vault token..."
-          while [ ! -f /vault/secrets/.vault-token ]; do
+          until [ -f /vault/secrets/.vault-token ]; do
             sleep 1
           done
-          echo "Vault token available, starting Jwtlet..."
-          exec /jwtlet-server
+          echo "Vault token available"
+        volumeMounts:
+        - name: vault-secrets
+          mountPath: /vault/secrets
+          readOnly: true
+      containers:
+      - name: jwtlet
+        image: ghcr.io/eclipse-cfm/jwtlet:latest
         ports:
         - containerPort: 8080
           name: token-exchange

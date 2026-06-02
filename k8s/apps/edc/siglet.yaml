@@ -37,6 +37,52 @@ spec:
         app: siglet
     spec:
       serviceAccountName: siglet-sa
+      initContainers:
+        # Native sidecar: starts and stays running before the main containers,
+        # writing the Vault token to /vault/secrets/.vault-token.
+        - name: vault-agent
+          image: hashicorp/vault:latest
+          restartPolicy: Always
+          securityContext:
+            capabilities:
+              add:
+                - IPC_LOCK
+          args:
+            - "agent"
+            - "-config=/vault/config/vault-agent-config.hcl"
+            - "-log-level=debug"
+          env:
+            - name: VAULT_ADDR
+              value: "http://vault:8200"
+          volumeMounts:
+            - name: vault-agent-config
+              mountPath: /vault/config
+            - name: vault-secrets
+              mountPath: /vault/secrets
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+        # Block startup until the Vault token has actually been written, so
+        # siglet never starts before the token file exists.
+        - name: wait-for-vault-token
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for Vault token..."
+              until [ -f /vault/secrets/.vault-token ]; do
+                sleep 1
+              done
+              echo "Vault token available"
+          volumeMounts:
+            - name: vault-secrets
+              mountPath: /vault/secrets
+              readOnly: true
       volumes:
         - name: vault-secrets
           emptyDir: { }
@@ -114,32 +160,6 @@ spec:
             limits:
               memory: "512Mi"
               cpu: "500m"
-        # Vault Agent sidecar
-        - name: vault-agent
-          image: hashicorp/vault:latest
-          securityContext:
-            capabilities:
-              add:
-                - IPC_LOCK
-          args:
-            - "agent"
-            - "-config=/vault/config/vault-agent-config.hcl"
-            - "-log-level=debug"
-          env:
-            - name: VAULT_ADDR
-              value: "http://vault:8200"
-          volumeMounts:
-            - name: vault-agent-config
-              mountPath: /vault/config
-            - name: vault-secrets
-              mountPath: /vault/secrets
-          resources:
-            requests:
-              memory: "64Mi"
-              cpu: "50m"
-            limits:
-              memory: "128Mi"
-              cpu: "100m"
 ---
 apiVersion: v1
 kind: Service
