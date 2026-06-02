@@ -34,11 +34,21 @@ spec:
         # Wait for provision-manager to be ready
         - name: wait-for-provision-manager
           image: curlimages/curl:latest
+          env:
+            - name: KC_HOST
+              value: "http://keycloak.edc-v.svc.cluster.local:8080"
           command:
             - sh
             - -c
             - |
-              until curl -sf http://provision-manager.edc-v.svc.cluster.local:8080/api/v1alpha1/activity-definitions; do
+              TOKEN=$(curl -sf -X POST "${KC_HOST}/realms/edcv/protocol/openid-connect/token" \
+                -H "Content-Type: application/x-www-form-urlencoded" \
+                -d "grant_type=client_credentials" \
+                -d "client_id=provisioner" \
+                -d "client_secret=provisioner-secret" \
+                -d "scope=provision-manager-api:read" \
+                | sed -n 's/.*"access_token":"\([^"]*\)".*/\1/p')
+              until curl -sf -H "Authorization: Bearer ${TOKEN}" http://provision-manager.edc-v.svc.cluster.local:8080/api/v1alpha1/activity-definitions; do
                 echo "Waiting for provision-manager to be ready..."
                 sleep 5
               done
@@ -49,12 +59,43 @@ spec:
           env:
             - name: PM_BASE_URL
               value: "http://provision-manager.edc-v.svc.cluster.local:8080"
+            - name: KC_HOST
+              value: "http://keycloak.edc-v.svc.cluster.local:8080"
           command:
             - sh
             - -c
             - |
               set -e
 
+              # Executes a curl request and stores the response body in RESP_BODY and status code in RESP_STATUS.
+              do_curl() {
+                RESP=$(curl -s -w "\n%{http_code}" "$@")
+                RESP_STATUS=$(printf '%s\n' "$RESP" | tail -1)
+                RESP_BODY=$(printf '%s\n' "$RESP" | sed '$d')
+              }
+
+              echo "================================================"
+              echo "Step 0: Obtain Provisioner Token"
+              echo "================================================"
+
+              do_curl -X POST "${KC_HOST}/realms/edcv/protocol/openid-connect/token" \
+                -H "Content-Type: application/x-www-form-urlencoded" \
+                -d "grant_type=client_credentials" \
+                -d "client_id=provisioner" \
+                -d "client_secret=provisioner-secret" \
+                -d "scope=provision-manager-api:write"
+              if [ "$RESP_STATUS" -ge 400 ]; then
+                echo "ERROR: Failed to get provisioner token (HTTP $RESP_STATUS): $RESP_BODY"
+                exit 1
+              fi
+              PROVISIONER_TOKEN=$(printf '%s\n' "$RESP_BODY" | sed -n 's/.*"access_token":"\([^"]*\)".*/\1/p')
+              if [ -z "$PROVISIONER_TOKEN" ]; then
+                echo "ERROR: Failed to parse provisioner token from response: $RESP_BODY"
+                exit 1
+              fi
+              echo "✓ Provisioner token obtained"
+
+              echo ""
               echo "================================================"
               echo "ProvisionManager Seeding"
               echo "================================================"
@@ -63,22 +104,27 @@ spec:
               echo "Step 1: Create network-activity ActivityDefinition"
               echo "---------------------------------------------------"
 
-              curl -sfS -w "\nHTTP_STATUS:%{http_code}\n" -X POST "${PM_BASE_URL}/api/v1alpha1/activity-definitions" \
+              do_curl -X POST "${PM_BASE_URL}/api/v1alpha1/activity-definitions" \
+                -H "Authorization: Bearer ${PROVISIONER_TOKEN}" \
                 -H "Content-Type: application/json" \
-                -d '{ 
+                -d '{
                   "description": "Provisions DNS entries",
                   "inputSchema": {},
                   "outputSchema": {},
                   "type": "network-activity"
                 }'
-
+              if [ "$RESP_STATUS" -ge 400 ]; then
+                echo "ERROR: Failed to create network-activity (HTTP $RESP_STATUS): $RESP_BODY"
+                exit 1
+              fi
               echo "✓ network-activity created"
 
               echo ""
               echo "Step 2: Create edcv-activity ActivityDefinition"
               echo "------------------------------------------------"
 
-              curl -sfS -w "\nHTTP_STATUS:%{http_code}\n" -X POST "${PM_BASE_URL}/api/v1alpha1/activity-definitions" \
+              do_curl -X POST "${PM_BASE_URL}/api/v1alpha1/activity-definitions" \
+                -H "Authorization: Bearer ${PROVISIONER_TOKEN}" \
                 -H "Content-Type: application/json" \
                 -d '{
                   "description": "Provisions EDC-V Control plane entries",
@@ -86,14 +132,18 @@ spec:
                   "outputSchema": {},
                   "type": "edcv-activity"
                 }'
-
+              if [ "$RESP_STATUS" -ge 400 ]; then
+                echo "ERROR: Failed to create edcv-activity (HTTP $RESP_STATUS): $RESP_BODY"
+                exit 1
+              fi
               echo "✓ edcv-activity created"
-              
+
               echo ""
               echo "Step 3: Create identityhub-activity ActivityDefinition"
               echo "------------------------------------------------"
 
-              curl -sfS -w "\nHTTP_STATUS:%{http_code}\n" -X POST "${PM_BASE_URL}/api/v1alpha1/activity-definitions" \
+              do_curl -X POST "${PM_BASE_URL}/api/v1alpha1/activity-definitions" \
+                -H "Authorization: Bearer ${PROVISIONER_TOKEN}" \
                 -H "Content-Type: application/json" \
                 -d '{
                   "description": "Provisions IdentityHub entries",
@@ -101,14 +151,18 @@ spec:
                   "outputSchema": {},
                   "type": "identityhub-activity"
                 }'
-
+              if [ "$RESP_STATUS" -ge 400 ]; then
+                echo "ERROR: Failed to create identityhub-activity (HTTP $RESP_STATUS): $RESP_BODY"
+                exit 1
+              fi
               echo "✓ identityhub-activity created"
 
               echo ""
               echo "Step 4: Create registration-activity ActivityDefinition"
               echo "--------------------------------------------------------"
 
-              curl -sfS -w "\nHTTP_STATUS:%{http_code}\n" -X POST "${PM_BASE_URL}/api/v1alpha1/activity-definitions" \
+              do_curl -X POST "${PM_BASE_URL}/api/v1alpha1/activity-definitions" \
+                -H "Authorization: Bearer ${PROVISIONER_TOKEN}" \
                 -H "Content-Type: application/json" \
                 -d '{
                   "description": "Creates Holder entries on the IssuerService",
@@ -116,14 +170,18 @@ spec:
                   "outputSchema": {},
                   "type": "registration-activity"
                 }'
-
+              if [ "$RESP_STATUS" -ge 400 ]; then
+                echo "ERROR: Failed to create registration-activity (HTTP $RESP_STATUS): $RESP_BODY"
+                exit 1
+              fi
               echo "✓ registration-activity created"
 
               echo ""
               echo "Step 5: Create keycloak-activity ActivityDefinition"
               echo "----------------------------------------------------"
 
-              curl -sfS -w "\nHTTP_STATUS:%{http_code}\n" -X POST "${PM_BASE_URL}/api/v1alpha1/activity-definitions" \
+              do_curl -X POST "${PM_BASE_URL}/api/v1alpha1/activity-definitions" \
+                -H "Authorization: Bearer ${PROVISIONER_TOKEN}" \
                 -H "Content-Type: application/json" \
                 -d '{
                   "description": "Provisions Keycloak clients",
@@ -131,14 +189,18 @@ spec:
                   "outputSchema": {},
                   "type": "keycloak-activity"
                 }'
-
+              if [ "$RESP_STATUS" -ge 400 ]; then
+                echo "ERROR: Failed to create keycloak-activity (HTTP $RESP_STATUS): $RESP_BODY"
+                exit 1
+              fi
               echo "✓ keycloak-activity created"
 
               echo ""
               echo "Step 6: Create onboarding-activity ActivityDefinition"
               echo "------------------------------------------------------"
 
-              curl -sfS -w "\nHTTP_STATUS:%{http_code}\n" -X POST "${PM_BASE_URL}/api/v1alpha1/activity-definitions" \
+              do_curl -X POST "${PM_BASE_URL}/api/v1alpha1/activity-definitions" \
+                -H "Authorization: Bearer ${PROVISIONER_TOKEN}" \
                 -H "Content-Type: application/json" \
                 -d '{
                   "description": "Onboards participants (= requests credentials)",
@@ -146,7 +208,10 @@ spec:
                   "outputSchema": {},
                   "type": "onboarding-activity"
                 }'
-
+              if [ "$RESP_STATUS" -ge 400 ]; then
+                echo "ERROR: Failed to create onboarding-activity (HTTP $RESP_STATUS): $RESP_BODY"
+                exit 1
+              fi
               echo "✓ onboarding-activity created"
 
               echo ""
@@ -155,7 +220,8 @@ spec:
 
               DEPLOY_ORCH_ID=$(cat /proc/sys/kernel/random/uuid)
 
-              curl -sfS -w "\nHTTP_STATUS:%{http_code}\n" -X POST "${PM_BASE_URL}/api/v1alpha1/orchestration-definitions" \
+              do_curl -X POST "${PM_BASE_URL}/api/v1alpha1/orchestration-definitions" \
+                -H "Authorization: Bearer ${PROVISIONER_TOKEN}" \
                 -H "Content-Type: application/json" \
                 -d '{
                   "activities": {
@@ -220,10 +286,12 @@ spec:
                   "schema": {},
                   "id": "'"${DEPLOY_ORCH_ID}"'"
                 }'
-
+              if [ "$RESP_STATUS" -ge 400 ]; then
+                echo "ERROR: Failed to create Orchestration Definition (HTTP $RESP_STATUS): $RESP_BODY"
+                exit 1
+              fi
               echo "✓ Orchestration definition created (ID: ${DEPLOY_ORCH_ID})"
-              
-              
+
               echo ""
               echo "================================================"
               echo "ProvisionManager seeding completed!"

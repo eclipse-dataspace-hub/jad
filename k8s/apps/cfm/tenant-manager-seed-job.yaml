@@ -34,11 +34,21 @@ spec:
         # Wait for tenant-manager to be ready
         - name: wait-for-tenant-manager
           image: curlimages/curl:latest
+          env:
+            - name: KC_HOST
+              value: "http://keycloak.edc-v.svc.cluster.local:8080"
           command:
             - sh
             - -c
             - |
-              until curl -sf http://tenant-manager.edc-v.svc.cluster.local:8080/api/v1alpha1/cells; do
+              TOKEN=$(curl -sf -X POST "${KC_HOST}/realms/edcv/protocol/openid-connect/token" \
+                -H "Content-Type: application/x-www-form-urlencoded" \
+                -d "grant_type=client_credentials" \
+                -d "client_id=provisioner" \
+                -d "client_secret=provisioner-secret" \
+                -d "scope=tenant-manager-api:read" \
+                | sed -n 's/.*"access_token":"\([^"]*\)".*/\1/p')
+              until curl -sf -H "Authorization: Bearer ${TOKEN}" http://tenant-manager.edc-v.svc.cluster.local:8080/api/v1alpha1/cells; do
                 echo "Waiting for tenant-manager to be ready..."
                 sleep 5
               done
@@ -49,19 +59,51 @@ spec:
           env:
             - name: TM_BASE_URL
               value: "http://tenant-manager.edc-v.svc.cluster.local:8080"
+            - name: KC_HOST
+              value: "http://keycloak.edc-v.svc.cluster.local:8080"
           command:
             - sh
             - -c
             - |
               set -e
 
+              # Executes a curl request and stores the response body in RESP_BODY and status code in RESP_STATUS.
+              do_curl() {
+                RESP=$(curl -s -w "\n%{http_code}" "$@")
+                RESP_STATUS=$(printf '%s\n' "$RESP" | tail -1)
+                RESP_BODY=$(printf '%s\n' "$RESP" | sed '$d')
+              }
+
               echo "================================================"
-              echo "TenantManager Seeding"
+              echo "Step 1: Obtain Provisioner Token"
+              echo "================================================"
+
+              do_curl -X POST "${KC_HOST}/realms/edcv/protocol/openid-connect/token" \
+                -H "Content-Type: application/x-www-form-urlencoded" \
+                -d "grant_type=client_credentials" \
+                -d "client_id=provisioner" \
+                -d "client_secret=provisioner-secret" \
+                -d "scope=tenant-manager-api:write"
+              if [ "$RESP_STATUS" -ge 400 ]; then
+                echo "ERROR: Failed to get provisioner token (HTTP $RESP_STATUS): $RESP_BODY"
+                exit 1
+              fi
+              PROVISIONER_TOKEN=$(printf '%s\n' "$RESP_BODY" | sed -n 's/.*"access_token":"\([^"]*\)".*/\1/p')
+              if [ -z "$PROVISIONER_TOKEN" ]; then
+                echo "ERROR: Failed to parse provisioner token from response: $RESP_BODY"
+                exit 1
+              fi
+              echo "✓ Provisioner token obtained"
+
+              echo ""
+              echo "================================================"
+              echo "Step 2: TenantManager Seeding"
               echo "================================================"
 
               # Create Cell
               echo "Creating Cell..."
-              CELL_RESPONSE=$(curl -s -X POST "$TM_BASE_URL/api/v1alpha1/cells" \
+              do_curl -X POST "$TM_BASE_URL/api/v1alpha1/cells" \
+                -H "Authorization: Bearer ${PROVISIONER_TOKEN}" \
                 -H "Content-Type: application/json" \
                 -d '{
                   "properties": {
@@ -69,14 +111,19 @@ spec:
                   },
                   "state": "active",
                   "stateTimestamp": "'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"
-                }')
+                }'
+              if [ "$RESP_STATUS" -ge 400 ]; then
+                echo "ERROR: Failed to create Cell (HTTP $RESP_STATUS): $RESP_BODY"
+                exit 1
+              fi
 
-              CELL_ID=$(echo "$CELL_RESPONSE" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
-              echo "Cell created with ID: $CELL_ID"
+              CELL_ID=$(printf '%s\n' "$RESP_BODY" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+              echo "✓ Cell created with ID: $CELL_ID"
 
               # Create Dataspace Profile
               echo "Creating Dataspace Profile..."
-              PROFILE_RESPONSE=$(curl -s -X POST "$TM_BASE_URL/api/v1alpha1/dataspace-profiles" \
+              do_curl -X POST "$TM_BASE_URL/api/v1alpha1/dataspace-profiles" \
+                -H "Authorization: Bearer ${PROVISIONER_TOKEN}" \
                 -H "Content-Type: application/json" \
                 -d '{
                   "artifacts": [],
@@ -98,21 +145,30 @@ spec:
                       }
                     ]
                   }
-                }')
+                }'
+              if [ "$RESP_STATUS" -ge 400 ]; then
+                echo "ERROR: Failed to create Dataspace Profile (HTTP $RESP_STATUS): $RESP_BODY"
+                exit 1
+              fi
 
-              DATASPACE_PROFILE_ID=$(echo "$PROFILE_RESPONSE" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
-              echo "Dataspace Profile created with ID: $DATASPACE_PROFILE_ID"
+              DATASPACE_PROFILE_ID=$(printf '%s\n' "$RESP_BODY" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+              echo "✓ Dataspace Profile created with ID: $DATASPACE_PROFILE_ID"
 
               # Deploy Dataspace Profile
               echo "Deploying Dataspace Profile..."
-              curl -sfS -w "\nHTTP_STATUS:%{http_code}\n" -X POST "$TM_BASE_URL/api/v1alpha1/dataspace-profiles/$DATASPACE_PROFILE_ID/deployments" \
+              do_curl -X POST "$TM_BASE_URL/api/v1alpha1/dataspace-profiles/$DATASPACE_PROFILE_ID/deployments" \
+                -H "Authorization: Bearer ${PROVISIONER_TOKEN}" \
                 -H "Content-Type: application/json" \
                 -d '{
                   "profileId": "'"$DATASPACE_PROFILE_ID"'",
                   "cellId": "'"$CELL_ID"'"
                 }'
+              if [ "$RESP_STATUS" -ge 400 ]; then
+                echo "ERROR: Failed to deploy Dataspace Profile (HTTP $RESP_STATUS): $RESP_BODY"
+                exit 1
+              fi
 
-              echo "Dataspace Profile deployed successfully"
+              echo "✓ Dataspace Profile deployed successfully"
               echo "================================================"
               echo "TenantManager Seeding Complete"
               echo "================================================"
