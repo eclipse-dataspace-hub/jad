@@ -118,3 +118,9 @@ data:
     GRANT ALL PRIVILEGES ON DATABASE sigletdb TO siglet;
     \c sigletdb
     GRANT ALL ON SCHEMA public TO siglet;
+
+    CREATE DATABASE jwtlet;
+    CREATE USER jwtlet WITH PASSWORD 'jwtlet';
+    GRANT ALL PRIVILEGES ON DATABASE jwtlet TO jwtlet;
+    \c jwtlet
+    GRANT ALL ON SCHEMA public TO jwtlet;

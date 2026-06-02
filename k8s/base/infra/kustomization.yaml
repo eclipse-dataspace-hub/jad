@@ -17,6 +17,5 @@ resources:
   - gateway.yaml
   - nats.yaml
   - postgres.yaml
-  - clearglass.yaml
   - vault.yaml
   - keycloak.yaml
