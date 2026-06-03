@@ -25,5 +25,5 @@ data:
     token_file = "/vault/secrets/.vault-token"
 
     [service_accounts]
-    # only those three scopes exist for now, and the CFM needs all of them
-    "system:serviceaccount:edc-v:cfm" = ["jwtlet:management:mappings:write", "jwtlet:management:scope:write", "jwtlet:management:read"]
+    # only those three scopes exist for now, and the CFM needs all of them to create and confirm new mappings
+    "system:serviceaccount:edc-v:cfm-agents" = ["jwtlet:management:mappings:write", "jwtlet:management:scope:write", "jwtlet:management:read"]

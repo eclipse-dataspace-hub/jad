@@ -32,6 +32,7 @@ spec:
         platform: edcv
         type: edcv-app
     spec:
+      serviceAccountName: cfm-agents
       containers:
         - name: keycloak-agent
           image: ghcr.io/eclipse-cfm/cfm/kcagent:latest
@@ -47,6 +48,9 @@ spec:
             - name: keycloak-agent-config
               mountPath: /etc/appname
               readOnly: true
+            - name: jwtlet-subject-token
+              mountPath: /var/run/secrets/jwtlet
+              readOnly: true
         - name: edcv-agent
           image: ghcr.io/eclipse-cfm/cfm/edcvagent:latest
           imagePullPolicy: Always
@@ -60,6 +64,9 @@ spec:
           volumeMounts:
             - name: edcv-agent-config
               mountPath: /etc/appname
+              readOnly: true
+            - name: jwtlet-subject-token
+              mountPath: /var/run/secrets/jwtlet
               readOnly: true
         - name: ih-agent
           image: ghcr.io/eclipse-cfm/cfm/ihagent:latest
@@ -75,6 +82,9 @@ spec:
             - name: ih-agent-config
               mountPath: /etc/appname
               readOnly: true
+            - name: jwtlet-subject-token
+              mountPath: /var/run/secrets/jwtlet
+              readOnly: true
         - name: registration-agent
           image: ghcr.io/eclipse-cfm/cfm/regagent:latest
           imagePullPolicy: Always
@@ -88,6 +98,9 @@ spec:
           volumeMounts:
             - name: registration-agent-config
               mountPath: /etc/appname
+              readOnly: true
+            - name: jwtlet-subject-token
+              mountPath: /var/run/secrets/jwtlet
               readOnly: true
         - name: onboarding-agent
           image: ghcr.io/eclipse-cfm/cfm/obagent:latest
@@ -103,7 +116,21 @@ spec:
             - name: onboarding-agent-config
               mountPath: /etc/appname
               readOnly: true
+            - name: jwtlet-subject-token
+              mountPath: /var/run/secrets/jwtlet
+              readOnly: true
       volumes:
+        # Audience-scoped, auto-rotated SA token for the cfm SA. Used as the
+        # RFC 8693 subject_token when exchanging for a participant-scoped token
+        # via the jwtlet token-exchange API. Audience must match jwtlet's
+        # `client_audience` in jwtlet-config.yaml.
+        - name: jwtlet-subject-token
+          projected:
+            sources:
+              - serviceAccountToken:
+                  path: token
+                  audience: https://kubernetes.default.svc.cluster.local
+                  expirationSeconds: 3600
         - name: keycloak-agent-config
           configMap:
             name: keycloak-agent-config
