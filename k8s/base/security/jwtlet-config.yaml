@@ -18,7 +18,7 @@ data:
 
     [token]
     client_audience = "https://kubernetes.default.svc.cluster.local"
-    audience        = "jwtlet-e2e"
+    audience        = "edcv"
 
     [vault]
     url        = "http://vault.edc-v.svc.cluster.local:8200"
