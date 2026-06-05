@@ -8,6 +8,7 @@ metadata:
   namespace: edc-v
 data:
   jwtlet.toml: |
+    issuer = "http://jwtlet.edc-v.svc.cluster.local:8080"
     [storage_backend]
     type = "postgres"
     url  = "postgresql://jwtlet:jwtlet@postgres:5432/jwtlet"
@@ -27,3 +28,4 @@ data:
     [service_accounts]
     # only those three scopes exist for now, and the CFM needs all of them to create and confirm new mappings
     "system:serviceaccount:edc-v:cfm-agents" = ["jwtlet:management:mappings:write", "jwtlet:management:scope:write", "jwtlet:management:read"]
+    "system:serviceaccount:edc-v:seed-jobs" = ["jwtlet:management:mappings:write", "jwtlet:management:scope:write", "jwtlet:management:read"]

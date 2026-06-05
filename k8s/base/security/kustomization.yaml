@@ -18,3 +18,4 @@ resources:
   - jwtlet-config.yaml
   - jwtlet-vault-agent-config.yaml
   - jwtlet-service-accounts.yaml
+  - jwtlet-seed-job.yaml
