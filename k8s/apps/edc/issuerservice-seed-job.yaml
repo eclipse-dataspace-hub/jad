@@ -32,6 +32,7 @@ spec:
         platform: edcv
         type: edcv-job
     spec:
+      serviceAccountName: seed-jobs
       restartPolicy: OnFailure
       initContainers:
         # Wait for issuerservice to be ready
@@ -57,6 +58,12 @@ spec:
               value: "issuer"
             - name: ISSUER_CLIENT_SECRET
               value: "issuer-secret"
+            - name: JWTLET_TOKEN_URL
+              value: "http://jwtlet.edc-v.svc.cluster.local:8080/token"
+          volumeMounts:
+            - name: jwtlet-subject-token
+              mountPath: /var/run/secrets/jwtlet
+              readOnly: true
           command:
             - sh
             - -c
@@ -153,26 +160,36 @@ spec:
               echo "Step 2: Create Issuer Tenant in IssuerService"
               echo "================================================"
 
-              # Get provisioner token
-              do_curl -X POST "${KC_HOST}/realms/edcv/protocol/openid-connect/token" \
+              # Exchange the projected SA token for an issuer-scoped token via jwtlet (RFC 8693).
+              SA_TOKEN=$(cat /var/run/secrets/jwtlet/token)
+              if [ -z "$SA_TOKEN" ]; then
+                echo "ERROR: subject token at /var/run/secrets/jwtlet/token is empty"
+                exit 1
+              fi
+              
+              //todo: exchange for an issuer-participant scoped token instead of an admin scoped token! 
+              
+              do_curl -X POST "${JWTLET_TOKEN_URL}" \
                 -H "Content-Type: application/x-www-form-urlencoded" \
-                -d "grant_type=client_credentials" \
-                -d "client_id=provisioner" \
-                -d "client_secret=provisioner-secret" \
-                -d "scope=issuer-admin-api:write"
+                --data-urlencode "grant_type=urn:ietf:params:oauth:grant-type:token-exchange" \
+                --data-urlencode "subject_token=${SA_TOKEN}" \
+                --data-urlencode "resource=issuer" \
+                --data-urlencode "scope=write admin" \
+                --data-urlencode "audience=edcv"
               if [ "$RESP_STATUS" -ge 400 ]; then
-                echo "ERROR: Failed to get provisioner token (HTTP $RESP_STATUS): $RESP_BODY"
+                echo "ERROR: Failed to exchange SA token (HTTP $RESP_STATUS): $RESP_BODY"
                 exit 1
               fi
-              PROVISIONER_TOKEN=$(printf '%s\n' "$RESP_BODY" | sed -n 's/.*"access_token":"\([^"]*\)".*/\1/p')
-              if [ -z "$PROVISIONER_TOKEN" ]; then
-                echo "ERROR: Failed to parse provisioner token from response: $RESP_BODY"
+              EXCHANGED_TOKEN=$(printf '%s\n' "$RESP_BODY" | sed -n 's/.*"access_token":"\([^"]*\)".*/\1/p')
+              if [ -z "$EXCHANGED_TOKEN" ]; then
+                echo "ERROR: Failed to parse exchanged token from response: $RESP_BODY"
                 exit 1
               fi
+              echo "✓ Issuer-scoped token obtained"
 
               # Create issuer tenant
               do_curl -X POST "http://issuerservice.edc-v.svc.cluster.local:10015/api/identity/v1beta/participants" \
-                -H "Authorization: Bearer ${PROVISIONER_TOKEN}" \
+                -H "Authorization: Bearer ${EXCHANGED_TOKEN}" \
                 -H "Content-Type: application/json" \
                 -d '{
                   "roles": ["admin"],
@@ -222,27 +239,10 @@ spec:
               echo "Step 3: Create AttestationDefinitions"
               echo "================================================"
 
-              # Get issuer token
-              do_curl -X POST "${KC_HOST}/realms/edcv/protocol/openid-connect/token" \
-                -H "Content-Type: application/x-www-form-urlencoded" \
-                -d "grant_type=client_credentials" \
-                -d "client_id=issuer" \
-                -d "client_secret=issuer-secret" \
-                -d "scope=issuer-admin-api:write"
-              if [ "$RESP_STATUS" -ge 400 ]; then
-                echo "ERROR: Failed to get issuer token (HTTP $RESP_STATUS): $RESP_BODY"
-                exit 1
-              fi
-              ISSUER_TOKEN=$(printf '%s\n' "$RESP_BODY" | sed -n 's/.*"access_token":"\([^"]*\)".*/\1/p')
-              if [ -z "$ISSUER_TOKEN" ]; then
-                echo "ERROR: Failed to parse issuer token from response: $RESP_BODY"
-                exit 1
-              fi
-
               # Create attestation definitions
               echo "Creating Membership AttestationDefinition"
               do_curl -X POST "http://issuerservice.edc-v.svc.cluster.local:10013/api/admin/v1beta/participants/issuer/attestations" \
-                -H "Authorization: Bearer ${ISSUER_TOKEN}" \
+                -H "Authorization: Bearer ${EXCHANGED_TOKEN}" \
                 -H "Content-Type: application/json" \
                 -d '{
                   "attestationType": "membership",
@@ -260,7 +260,7 @@ spec:
 
               echo "Creating Manufacturer AttestationDefinition"
               do_curl -X POST "http://issuerservice.edc-v.svc.cluster.local:10013/api/admin/v1beta/participants/issuer/attestations" \
-                -H "Authorization: Bearer ${ISSUER_TOKEN}" \
+                -H "Authorization: Bearer ${EXCHANGED_TOKEN}" \
                 -H "Content-Type: application/json" \
                 -d '{
                   "attestationType": "manufacturer",
@@ -284,7 +284,7 @@ spec:
               # Create credential definitions
               echo "Creating Membership CredentialDefinition"
               do_curl -X POST "http://issuerservice.edc-v.svc.cluster.local:10013/api/admin/v1beta/participants/issuer/credentialdefinitions" \
-                -H "Authorization: Bearer ${ISSUER_TOKEN}" \
+                -H "Authorization: Bearer ${EXCHANGED_TOKEN}" \
                 -H "Content-Type: application/json" \
                 -d '{
                   "attestations": ["membership-attestation-def-1"],
@@ -329,7 +329,7 @@ spec:
 
               echo "Creating Manufacturer CredentialDefinition"
               do_curl -X POST "http://issuerservice.edc-v.svc.cluster.local:10013/api/admin/v1beta/participants/issuer/credentialdefinitions" \
-                -H "Authorization: Bearer ${ISSUER_TOKEN}" \
+                -H "Authorization: Bearer ${EXCHANGED_TOKEN}" \
                 -H "Content-Type: application/json" \
                 -d '{
                   "attestations": ["manufacturer-attestation-def-1"],
@@ -376,3 +376,13 @@ spec:
               echo "================================================"
               echo "IssuerService seeding completed successfully!"
               echo "================================================"
+      volumes:
+        # RFC 8693 subject_token exchanged at jwtlet's /token endpoint for an
+        # issuer-scoped token. Audience must match jwtlet's `client_audience`.
+        - name: jwtlet-subject-token
+          projected:
+            sources:
+              - serviceAccountToken:
+                  path: token
+                  audience: https://kubernetes.default.svc.cluster.local
+                  expirationSeconds: 3600
