@@ -34,3 +34,7 @@ data:
     identityhub.url: http://identityhub.edc-v.svc.cluster.local:7081/api/identity
     issuerservice.url: http://issuerservice.edc-v.svc.cluster.local:10013/api/admin
     issuer.id: issuer # base64 encoded "issuer"
+    
+    tokenexchange.url: http://jwtlet.edc-v.svc.cluster.local:8080
+    tokenexchange.audience: edcv
+    tokenexchange.tokenFilePath: /var/run/secrets/jwtlet/token

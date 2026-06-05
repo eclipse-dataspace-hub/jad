@@ -41,3 +41,7 @@ data:
     identityhub.cs.url: http://identityhub.edc-v.svc.cluster.local:7082/api/credentials/v1/participants/%s
     controlplane.protocol.url: http://controlplane.edc-v.svc.cluster.local:8082/api/dsp/%s/http-dsp-profile-2025-1
     controlplane.dataservice.url: http://controlplane.edc-v.svc.cluster.local:8082/api/dsp/%s/.well-known/dspace-version
+    
+    tokenexchange.url: http://jwtlet.edc-v.svc.cluster.local:8080
+    tokenexchange.audience: edcv
+    tokenexchange.tokenFilePath: /var/run/secrets/jwtlet/token
