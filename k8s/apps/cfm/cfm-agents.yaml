@@ -36,7 +36,7 @@ spec:
       containers:
         - name: keycloak-agent
           image: ghcr.io/eclipse-cfm/cfm/kcagent:latest
-          imagePullPolicy: Always
+          imagePullPolicy: Never
           command: [ "/kcagent" ]
           args: [
             "--mode=debug"
@@ -51,9 +51,25 @@ spec:
             - name: jwtlet-subject-token
               mountPath: /var/run/secrets/jwtlet
               readOnly: true
+        - name: jwtlet-agent
+          image: ghcr.io/eclipse-cfm/cfm/jwtletagent:latest
+          imagePullPolicy: Never
+          command: [ "/jwtletagent" ]
+          args:
+              - "--mode=debug"
+          volumeMounts:
+              - name: jwtlet-subject-token
+                mountPath: /var/run/secrets/jwtlet
+                readOnly: true
+              - name: jwtlet-agent-config
+                mountPath: /etc/appname
+                readOnly: true
+          envFrom:
+            - configMapRef:
+                name: telemetry-config
         - name: edcv-agent
           image: ghcr.io/eclipse-cfm/cfm/edcvagent:latest
-          imagePullPolicy: Always
+          imagePullPolicy: Never
           command: [ "/edcvagent" ]
           args: [
             "--mode=debug"
@@ -70,7 +86,7 @@ spec:
               readOnly: true
         - name: ih-agent
           image: ghcr.io/eclipse-cfm/cfm/ihagent:latest
-          imagePullPolicy: Always
+          imagePullPolicy: Never
           command: [ "/ihagent" ]
           args: [
             "--mode=debug"
@@ -87,7 +103,7 @@ spec:
               readOnly: true
         - name: registration-agent
           image: ghcr.io/eclipse-cfm/cfm/regagent:latest
-          imagePullPolicy: Always
+          imagePullPolicy: Never
           command: [ "/regagent" ]
           args: [
             "--mode=debug"
@@ -104,7 +120,7 @@ spec:
               readOnly: true
         - name: onboarding-agent
           image: ghcr.io/eclipse-cfm/cfm/obagent:latest
-          imagePullPolicy: Always
+          imagePullPolicy: Never
           command: [ "/obagent" ]
           args: [
             "--mode=debug"
@@ -114,7 +130,7 @@ spec:
                 name: telemetry-config
           volumeMounts:
             - name: onboarding-agent-config
-              mountPath: /etc/appname
+              mountPath: /etc/appname 
               readOnly: true
             - name: jwtlet-subject-token
               mountPath: /var/run/secrets/jwtlet
@@ -146,7 +162,7 @@ spec:
         - name: onboarding-agent-config
           configMap:
             name: ob-agent-config
-        - name: ih-keyrotate-agent-config
+        - name: jwtlet-agent-config
           configMap:
-            name: ih-keyrotate-agent-config
+            name: jwtlet-agent-config
       restartPolicy: Always
