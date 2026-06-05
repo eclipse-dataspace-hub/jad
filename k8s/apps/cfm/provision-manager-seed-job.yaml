@@ -215,7 +215,26 @@ spec:
               echo "✓ onboarding-activity created"
 
               echo ""
-              echo "Step 7: Create Orchestration Definition (deploy + dispose)"
+              echo "Step 7: Create test-activity ActivityDefinition"
+              echo "------------------------------------------------"
+
+              do_curl -X POST "${PM_BASE_URL}/api/v1alpha1/activity-definitions" \
+                -H "Authorization: Bearer ${PROVISIONER_TOKEN}" \
+                -H "Content-Type: application/json" \
+                -d '{
+                  "description": "Runs JWTlet agent checks",
+                  "inputSchema": {},
+                  "outputSchema": {},
+                  "type": "jwtlet-activity"
+                }'
+              if [ "$RESP_STATUS" -ge 400 ]; then
+                echo "ERROR: Failed to create test-activity (HTTP $RESP_STATUS): $RESP_BODY"
+                exit 1
+              fi
+              echo "✓ jwtlet-activity created"
+
+              echo ""
+              echo "Step 8: Create Orchestration Definition (deploy + dispose)"
               echo "------------------------------------------------"
 
               DEPLOY_ORCH_ID=$(cat /proc/sys/kernel/random/uuid)
@@ -245,15 +264,21 @@ spec:
                       "type": "edcv-activity",
                       "dependsOn": []
                     }],
-                    "cfm.orchestration.vpa.deploy": [{
+                    "cfm.orchestration.vpa.deploy": [
+                    {
+                      "id": "jwtlet-tokenexchange-agent",
+                      "type": "jwtlet-activity"
+                    },
+                    {
                       "id": "kc-client-provisioner",
                       "type": "keycloak-activity",
-                      "dependsOn": []
+                      "dependsOn": ["jwtlet-tokenexchange-agent"]
                     },
                     {
                       "id": "registration-agent",
                       "type": "registration-activity",
                       "dependsOn": [
+                        "jwtlet-tokenexchange-agent",
                         "kc-client-provisioner"
                       ]
                     },
@@ -261,6 +286,7 @@ spec:
                       "id": "connector-provisioner",
                       "type": "edcv-activity",
                       "dependsOn": [
+                        "jwtlet-tokenexchange-agent",
                         "kc-client-provisioner", 
                         "identityhub-provisioner"
                       ]
@@ -269,6 +295,7 @@ spec:
                       "id": "identityhub-provisioner",
                       "type": "identityhub-activity",
                       "dependsOn": [
+                        "jwtlet-tokenexchange-agent",
                         "kc-client-provisioner"
                       ]
                     },
@@ -276,6 +303,7 @@ spec:
                       "id": "onboarding-agent",
                       "type": "onboarding-activity",
                       "dependsOn": [
+                        "jwtlet-tokenexchange-agent",
                         "connector-provisioner",
                         "identityhub-provisioner",
                         "registration-agent"
