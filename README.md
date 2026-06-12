@@ -483,6 +483,16 @@ This design keeps authentication logic out of the individual services and centra
 to add or modify access rules by updating the middleware definitions in
 [`k8s/base/jwt-middleware.yaml`](k8s/base/jwt-middleware.yaml).
 
+### Service-to-service authentication (jwtlet / token exchange)
+
+`clearglass` secures the **external** GlassAPI for human users. **In-cluster workloads** (the CFM
+agents, seed jobs, and your own apps) instead authenticate by exchanging their Kubernetes ServiceAccount token for a
+short-lived, scoped EDC token via **`jwtlet`** (RFC 8693). The EDC control plane, IdentityHub and IssuerService trust
+`jwtlet` as their OAuth2 issuer (`edc.iam.oauth2.issuer` / `jwks.url`).
+
+See [docs/token-exchange.md](docs/token-exchange.md) for the full picture: the exchange mechanism, the `jwtlet`
+APIs, the scope model, and a step-by-step guide for onboarding a new client application with its own service account.
+
 ## Advanced topics
 
 ### Rotate a participant's key material

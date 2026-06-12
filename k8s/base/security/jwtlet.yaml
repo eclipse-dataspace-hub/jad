@@ -97,6 +97,7 @@ spec:
       containers:
       - name: jwtlet
         image: ghcr.io/eclipse-cfm/jwtlet:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 8080
           name: token-exchange

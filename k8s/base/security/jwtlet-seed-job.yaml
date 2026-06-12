@@ -79,7 +79,7 @@ spec:
                 -d '{
                     "clientIdentifier": "system:serviceaccount:edc-v:seed-jobs",
                     "participantContext": "issuer",
-                    "scopes": ["read","write", "provisioner", "admin"],
+                    "scopes": ["read","write", "admin"],
                     "audiences": ["edcv"]
                 }'
               if [ "$RESP_STATUS" -eq 409 ]; then
@@ -135,26 +135,9 @@ spec:
                 -H "Authorization: Bearer $TOKEN" \
                 -H "Content-Type: application/json" \
                 -d '{
-                  "scope": "provisioner",
-                  "claims": {
-                    "role": "provisioner"
-                  }
-                }'
-              if [ "$RESP_STATUS" -eq 409 ]; then
-                echo "✓ 'provisioner' role scope mapping already exists"
-              elif [ "$RESP_STATUS" -ge 400 ]; then
-                echo "ERROR: Failed to create scope mapping entry (HTTP $RESP_STATUS): $RESP_BODY"
-                exit 1
-              fi
-              echo "✓ 'provisioner' role scope mapping created"
-              
-              do_curl -X POST "${JWTLET_MGMT_URL}/scopes" \
-                -H "Authorization: Bearer $TOKEN" \
-                -H "Content-Type: application/json" \
-                -d '{
                   "scope": "admin",
                   "claims": {
-                    "role": "admin"
+                    "scope": "management-api:admin identity-api:admin issuer-admin-api:admin"
                   }
                 }'
               if [ "$RESP_STATUS" -eq 409 ]; then

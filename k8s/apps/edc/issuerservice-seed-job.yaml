@@ -167,14 +167,12 @@ spec:
                 exit 1
               fi
               
-              //todo: exchange for an issuer-participant scoped token instead of an admin scoped token! 
-              
               do_curl -X POST "${JWTLET_TOKEN_URL}" \
                 -H "Content-Type: application/x-www-form-urlencoded" \
                 --data-urlencode "grant_type=urn:ietf:params:oauth:grant-type:token-exchange" \
                 --data-urlencode "subject_token=${SA_TOKEN}" \
                 --data-urlencode "resource=issuer" \
-                --data-urlencode "scope=write admin" \
+                --data-urlencode "scope=admin" \
                 --data-urlencode "audience=edcv"
               if [ "$RESP_STATUS" -ge 400 ]; then
                 echo "ERROR: Failed to exchange SA token (HTTP $RESP_STATUS): $RESP_BODY"
@@ -185,7 +183,7 @@ spec:
                 echo "ERROR: Failed to parse exchanged token from response: $RESP_BODY"
                 exit 1
               fi
-              echo "✓ Issuer-scoped token obtained"
+              echo "✓ Admin-scoped token obtained"
 
               # Create issuer tenant
               do_curl -X POST "http://issuerservice.edc-v.svc.cluster.local:10015/api/identity/v1beta/participants" \
@@ -238,6 +236,25 @@ spec:
               echo "================================================"
               echo "Step 3: Create AttestationDefinitions"
               echo "================================================"
+              
+              # exchange SA token for a narrow-scoped participant token
+              do_curl -X POST "${JWTLET_TOKEN_URL}" \
+                -H "Content-Type: application/x-www-form-urlencoded" \
+                --data-urlencode "grant_type=urn:ietf:params:oauth:grant-type:token-exchange" \
+                --data-urlencode "subject_token=${SA_TOKEN}" \
+                --data-urlencode "resource=issuer" \
+                --data-urlencode "scope=write" \
+                --data-urlencode "audience=edcv"
+              if [ "$RESP_STATUS" -ge 400 ]; then
+                echo "ERROR: Failed to exchange SA token (HTTP $RESP_STATUS): $RESP_BODY"
+                exit 1
+              fi
+              EXCHANGED_TOKEN=$(printf '%s\n' "$RESP_BODY" | sed -n 's/.*"access_token":"\([^"]*\)".*/\1/p')
+              if [ -z "$EXCHANGED_TOKEN" ]; then
+                echo "ERROR: Failed to parse exchanged token from response: $RESP_BODY"
+                exit 1
+              fi
+              echo "✓ Participant-scoped token obtained"
 
               # Create attestation definitions
               echo "Creating Membership AttestationDefinition"
