@@ -114,7 +114,7 @@ public class KeyRotationEndToEndTest {
 
     public static RequestSpecification participantRequest() {
         return given()
-                .header("Authorization", "Bearer " + TOKEN_PROVIDER.createToken(participantCredentials.clientId(), "participant"));
+                .header("Authorization", "Bearer " + TOKEN_PROVIDER.createToken(participantCredentials.clientId()));
     }
 
     @Test
