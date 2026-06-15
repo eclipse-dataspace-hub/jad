@@ -42,7 +42,7 @@ spec:
               name: http
           env:
             - name: JWKS_URL
-              value: http://keycloak.edc-v.svc.cluster.local:8080/realms/edcv/protocol/openid-connect/certs
+              value: http://jwtlet.edc-v.svc.cluster.local:8080/.well-known/jwks.json
           livenessProbe:
             httpGet:
               path: /healthz

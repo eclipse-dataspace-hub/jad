@@ -89,11 +89,32 @@ spec:
                 exit 1
               fi
               echo "✓ mapping entries created"
+              
+              echo "================================================"
+              echo "Step 2: Create mapping entry for Redline SA"
+              echo "================================================"
+
+              do_curl -X POST "${JWTLET_MGMT_URL}/mappings" \
+                -H "Authorization: Bearer ${TOKEN}" \
+                -H "Content-Type: application/json" \
+                -d '{
+                    "clientIdentifier": "system:serviceaccount:edc-v:redline",
+                    "participantContext": "redline",
+                    "scopes": ["read","write", "cfm-read","cfm-write", "admin"],
+                    "audiences": ["edcv"]
+                }'
+              if [ "$RESP_STATUS" -eq 409 ]; then
+                echo "✓ mapping entry already exists"
+              elif [ "$RESP_STATUS" -ge 400 ]; then
+                echo "ERROR: Failed to create mapping entry (HTTP $RESP_STATUS): $RESP_BODY"
+                exit 1
+              fi
+              echo "✓ mapping entries created"
 
 
               echo ""
               echo "================================================"
-              echo "Step 2: Create scope mapping entries"
+              echo "Step 3: Create scope mapping entries"
               echo "================================================"
 
               do_curl -X POST "${JWTLET_MGMT_URL}/scopes" \
@@ -130,6 +151,40 @@ spec:
                 exit 1
               fi
               echo "✓ 'write' scope mapping created"
+              
+              do_curl -X POST "${JWTLET_MGMT_URL}/scopes" \
+                -H "Authorization: Bearer $TOKEN" \
+                -H "Content-Type: application/json" \
+                -d '{
+                  "scope": "cfm-write",
+                  "claims": {
+                    "scope": "provision-manager-api:write tenant-manager-api:write"
+                  }
+                }'
+              if [ "$RESP_STATUS" -eq 409 ]; then
+                echo "✓ 'cfm-write' scope mapping already exists"
+              elif [ "$RESP_STATUS" -ge 400 ]; then
+                echo "ERROR: Failed to create scope mapping entry (HTTP $RESP_STATUS): $RESP_BODY"
+                exit 1
+              fi
+              echo "✓ 'CFM API write' scope mapping created"
+              
+              do_curl -X POST "${JWTLET_MGMT_URL}/scopes" \
+                -H "Authorization: Bearer $TOKEN" \
+                -H "Content-Type: application/json" \
+                -d '{
+                  "scope": "cfm-read",
+                  "claims": {
+                    "scope": "provision-manager-api:read tenant-manager-api:read"
+                  }
+                }'
+              if [ "$RESP_STATUS" -eq 409 ]; then
+                echo "✓ 'cfm-read' scope mapping already exists"
+              elif [ "$RESP_STATUS" -ge 400 ]; then
+                echo "ERROR: Failed to create scope mapping entry (HTTP $RESP_STATUS): $RESP_BODY"
+                exit 1
+              fi
+              echo "✓ 'CFM API write' scope mapping created"
               
               do_curl -X POST "${JWTLET_MGMT_URL}/scopes" \
                 -H "Authorization: Bearer $TOKEN" \
