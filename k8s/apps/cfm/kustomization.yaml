@@ -18,6 +18,7 @@ resources:
   - keycloak-agent-config.yaml
   - onboarding-agent-config.yaml
   - registration-agent-config.yaml
+  - jwtlet-agent-config.yaml
   - provision-manager.yaml
   - provision-manager-config.yaml
   - provision-manager-seed-job.yaml

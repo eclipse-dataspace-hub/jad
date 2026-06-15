@@ -12,8 +12,10 @@
 #
 
 resources:
-  - redline.yaml
-  - redline-config.yaml
-  - redline-seed-job.yaml
-#  - ui.yaml
-#  - ui-config.yaml
+  - clearglass.yaml
+  - jwt-middleware.yaml
+  - jwtlet.yaml
+  - jwtlet-config.yaml
+  - jwtlet-vault-agent-config.yaml
+  - jwtlet-service-accounts.yaml
+  - jwtlet-seed-job.yaml

@@ -12,8 +12,8 @@
 #
 
 resources:
-  - redline.yaml
-  - redline-config.yaml
-  - redline-seed-job.yaml
-#  - ui.yaml
-#  - ui-config.yaml
+  - jaeger.yaml
+  - loki.yaml
+  - prometheus.yaml
+  - grafana.yaml
+  - telemetry-config.yaml

@@ -54,8 +54,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.edc.jad.tests.Constants.APPLICATION_JSON;
 import static org.eclipse.edc.jad.tests.Constants.CONTROLPLANE_BASE_URL;
 import static org.eclipse.edc.jad.tests.Constants.TM_BASE_URL;
-import static org.eclipse.edc.jad.tests.KeycloakApi.createKeycloakToken;
-import static org.eclipse.edc.jad.tests.KeycloakApi.getAccessToken;
 
 /**
  * This test class executes a series of REST requests against several components to verify that an end-to-end
@@ -85,7 +83,7 @@ public class KeyRotationEndToEndTest {
         ));
         var slug = Instant.now().getEpochSecond();
 
-        TOKEN_PROVIDER.setDefaultTokenGenerator(() -> createKeycloakToken("admin", "edc-v-admin-secret", "issuer-admin-api:write", "identity-api:write", "management-api:write", "identity-api:read"));
+        TOKEN_PROVIDER.setDefaultTokenGenerator(() -> TokenExchange.getParticipantToken("redline", "cfm-read cfm-write read write"));
 
         MONITOR.info("Create cell and dataspace profile");
         var cellId = getCellId();
@@ -114,7 +112,7 @@ public class KeyRotationEndToEndTest {
 
     public static RequestSpecification participantRequest() {
         return given()
-                .header("Authorization", "Bearer " + TOKEN_PROVIDER.createToken(participantCredentials.clientId(), "participant"));
+                .header("Authorization", "Bearer " + TOKEN_PROVIDER.createToken(participantCredentials.participantContextId()));
     }
 
     @Test
@@ -122,11 +120,10 @@ public class KeyRotationEndToEndTest {
 
         // seed provider
         MONITOR.info("Seeding provider");
-        TOKEN_PROVIDER.registerTokenGenerator(participantCredentials.clientId(), () -> getAccessToken(participantCredentials.clientId(), participantCredentials.clientSecret(),
-                "management-api:write management-api:read identity-api:read identity-api:write").accessToken());
+        TOKEN_PROVIDER.registerTokenGenerator(participantCredentials.participantContextId(), () ->  participantCredentials.participantToken());
 
         // Register dataplane
-        registerDataPlane(participantCredentials.clientId());
+        registerDataPlane(participantCredentials.participantContextId());
         MONITOR.info("starting key rotation process");
 
         // Query participant profile using the "identifier" (DID)
@@ -151,7 +148,7 @@ public class KeyRotationEndToEndTest {
         // query the keypair resources next
         var keypairs = participantRequest()
                 .baseUri(Constants.IDENTITYHUB_BASE_URL)
-                .get("/participants/%s/keypairs".formatted(participantCredentials.clientId()))
+                .get("/participants/%s/keypairs".formatted(participantCredentials.participantContextId()))
                 .then()
                 .log().ifValidationFails()
                 .statusCode(200)
@@ -176,7 +173,7 @@ public class KeyRotationEndToEndTest {
                 .baseUri(Constants.IDENTITYHUB_BASE_URL)
                 .contentType(APPLICATION_JSON)
                 .body(keyDesc)
-                .post("/participants/%s/keypairs/%s/rotate".formatted(participantCredentials.clientId(), oldActiveKeyPair.getId()))
+                .post("/participants/%s/keypairs/%s/rotate".formatted(participantCredentials.participantContextId(), oldActiveKeyPair.getId()))
                 .then()
                 .log().ifValidationFails()
                 .statusCode(204);
@@ -184,7 +181,7 @@ public class KeyRotationEndToEndTest {
         // verify using the keypairs endpoint that and c), the new key is active
         var newKeyPairs = participantRequest()
                 .baseUri(Constants.IDENTITYHUB_BASE_URL)
-                .get("/participants/%s/keypairs".formatted(participantCredentials.clientId()))
+                .get("/participants/%s/keypairs".formatted(participantCredentials.participantContextId()))
                 .then()
                 .log().ifValidationFails()
                 .statusCode(200)

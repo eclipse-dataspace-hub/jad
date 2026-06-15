@@ -40,6 +40,18 @@ spec:
             capabilities:
               add:
                 - IPC_LOCK
+          livenessProbe:
+            httpGet:
+              path: /v1/sys/health
+              port: 8200
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /v1/sys/health
+              port: 8200
+            initialDelaySeconds: 5
+            periodSeconds: 5
           env:
             - name: VAULT_DEV_ROOT_TOKEN_ID
               value: "root"
@@ -48,12 +60,6 @@ spec:
           args:
             - "server"
             - "-dev"
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: vault-auth
-  namespace: edc-v
 
 ---
 apiVersion: batch/v1
@@ -237,6 +243,47 @@ spec:
                 policies=transit-policy \
                 ttl=1h
               
+              
+              echo "###############################"
+              echo "Starting jwtlet vault bootstrap"
+              echo "###############################"
+              
+              
+              # Enable Kubernetes auth method
+              echo "Enable Kubernetes auth method"
+              vault auth enable kubernetes 2>/dev/null || true
+              
+              # Enable Transit secrets engine
+              echo "Enable Transit secrets engine"
+              vault secrets enable transit 2>/dev/null || true
+              
+              # write policy to allow jwtlet to read key metadata and sign with its transit key
+              echo "write policy to allow jwtlet to read key metadata and sign with its transit key"
+              cat <<EOF | vault policy write jwtlet-policy - || { echo "Failed to write jwtlet-policy"; exit 1; }
+              path "transit/keys/signing-jwtlet_pc" {
+                capabilities = ["read"]
+              }
+                path "transit/sign/signing-jwtlet_pc" {
+                capabilities = ["update"]
+              }
+                path "sys/health" {
+                capabilities = ["read"]
+              }
+              EOF
+              
+              # Kubernetes auth role for jwtlet's service account
+              echo "Create Kubernetes auth role for jwtlet's service account"
+              vault write auth/kubernetes/role/jwtlet-role \
+                bound_service_account_names=jwtlet-sa \
+                bound_service_account_namespaces=edc-v \
+                policies=jwtlet-policy \
+                ttl=1h
+              
+              # Create Ed25519 signing key used by jwtlet (key name = "{prefix}-{participant_context_claim}")
+              # With defaults: prefix="signing", claim="jwtlet_pc" -> key="signing-jwtlet_pc"
+              echo "Create Ed25519 signing key used by jwtlet"
+              vault write -f transit/keys/signing-jwtlet_pc type=ed25519 2>/dev/null || true
+                            
               echo "Vault bootstrap completed successfully!"
       restartPolicy: OnFailure
 ---
@@ -251,6 +298,21 @@ spec:
   ports:
     - port: 8200
       targetPort: 8200
+
+---
+# Root token stored as a secret for sidecars that need VAULT_TOKEN
+apiVersion: v1
+kind: Secret
+metadata:
+  name: vault-root-token
+  namespace: edc-v
+  labels:
+    type: edcv-infra
+
+type: Opaque
+data:
+  # base64("root")
+  token: cm9vdA==
 
 ---
 apiVersion: gateway.networking.k8s.io/v1
@@ -271,27 +333,3 @@ spec:
       backendRefs:
         - name: vault
           port: 8200
----
-# ClusterRole to allow Vault to validate service account tokens
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: vault-token-reviewer
-rules:
-  - apiGroups: [ "authentication.k8s.io" ]
-    resources: [ "tokenreviews" ]
-    verbs: [ "create" ]
----
-# Bind the role to Vault's service account
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: vault-token-reviewer-binding
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: vault-token-reviewer
-subjects:
-  - kind: ServiceAccount
-    name: vault-auth
-    namespace: edc-v

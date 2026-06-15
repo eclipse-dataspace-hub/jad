@@ -24,7 +24,7 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 public class ApiAuthTest {
     @Test
     void verifyAuthenticatedRequest_shouldSucceed() {
-        var token = KeycloakApi.createKeycloakToken("provisioner", "provisioner-secret", "tenant-manager-api:read", "tenant-manager-api:write");
+        var token = TokenExchange.getParticipantToken("redline", "cfm-read cfm-write");
 
         given()
                 .header("Authorization", "Bearer " + token)

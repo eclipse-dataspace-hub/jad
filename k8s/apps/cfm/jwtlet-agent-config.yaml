@@ -15,24 +15,20 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: reg-agent-config
+  name: jwtlet-agent-config
   namespace: edc-v
 
 data:
   # the file must be called "tm", and the extension must be one of
   # "json", "toml", "yaml", "yml", "properties", "props", "prop", "hcl", "tfvars", "dotenv", "env", "ini"
-  regagent.env: |
+  jwtletagent.env: |
     uri: nats://nats.edc-v.svc.cluster.local:4222
     bucket: cfm-bucket
     stream: cfm-stream
     httpport: 8080
     postgres: true
     dsn: postgres://cfm:cfm@postgres.edc-v.svc.cluster.local:5432/cfm?sslmode=disable
-    keycloak.clientId: provisioner
-    keycloak.clientSecret: provisioner-secret
-    issuerservice.url: http://issuerservice.edc-v.svc.cluster.local:10013/api/admin
-    issuer.id: issuer # base64 encoded "issuer"
-    
+    management.url: http://jwtlet.edc-v.svc.cluster.local:8081
     tokenexchange.url: http://jwtlet.edc-v.svc.cluster.local:8080
     tokenexchange.audience: edcv
     tokenexchange.tokenFilePath: /var/run/secrets/jwtlet/token

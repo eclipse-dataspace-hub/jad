@@ -12,8 +12,10 @@
 #
 
 resources:
-  - redline.yaml
-  - redline-config.yaml
-  - redline-seed-job.yaml
-#  - ui.yaml
-#  - ui-config.yaml
+  - edcv-namespace.yaml
+  - gateway-class.yaml
+  - gateway.yaml
+  - nats.yaml
+  - postgres.yaml
+  - vault.yaml
+  - keycloak.yaml

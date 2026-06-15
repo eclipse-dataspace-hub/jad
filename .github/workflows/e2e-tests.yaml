@@ -47,31 +47,9 @@ jobs:
       - name: "Set up Helm"
         uses: azure/setup-helm@v5
 
-      - name: "Restore Docker image cache"
-        id: cache-docker
-        uses: actions/cache@v4
-        with:
-          path: /tmp/docker-images
-          key: docker-images-${{ github.sha }}
-
-      - name: "Load cached Docker images"
-        if: steps.cache-docker.outputs.cache-hit == 'true'
-        run: |
-          for f in /tmp/docker-images/*.tar; do docker load -i "$f"; done
-
       - name: "Build runtime images"
-        if: steps.cache-docker.outputs.cache-hit != 'true'
         run: ./gradlew dockerize
 
-      - name: "Save Docker images to cache"
-        if: steps.cache-docker.outputs.cache-hit != 'true'
-        run: |
-          mkdir -p /tmp/docker-images
-          docker save ghcr.io/eclipse-dataspace-hub/jad/controlplane:latest  > /tmp/docker-images/controlplane.tar
-          docker save ghcr.io/eclipse-dataspace-hub/jad/dataplane:latest     > /tmp/docker-images/dataplane.tar
-          docker save ghcr.io/eclipse-dataspace-hub/jad/identity-hub:latest  > /tmp/docker-images/identity-hub.tar
-          docker save ghcr.io/eclipse-dataspace-hub/jad/issuerservice:latest > /tmp/docker-images/issuerservice.tar
-      
       - name: "Create k8s Kind Cluster"
         uses: helm/kind-action@v1.14.0
         with:
@@ -114,6 +92,13 @@ jobs:
             --for=condition=ready pod \
             --selector=type=edcv-infra \
             --timeout=300s
+          
+          # wait for all init jobs (vault, jwtlet)
+          kubectl wait --namespace edc-v \
+            --selector=type=edcv-job \
+            --for=condition=complete job --all \
+            --timeout=300s
+          
 
 
       - name: "Deploy JAD applications"
@@ -132,7 +117,17 @@ jobs:
           kubectl wait --namespace edc-v \
             --selector=type=edcv-job \
             --for=condition=complete job --all \
-            --timeout=300s
+            --timeout=600s
+          
+          
+      - name: "Show pod status on timeout"
+        if: failure()
+        run: |-
+          echo "Wait command timed out or failed. Showing pod status in edc-v namespace:"
+          kubectl get pods -n edc-v
+          echo ""
+          echo "Detailed pod descriptions:"
+          kubectl describe pods -n edc-v
 
       - name: "Run E2E Test"
         run: |
