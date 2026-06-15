@@ -123,7 +123,7 @@ spec:
                 -d '{
                   "scope": "read",
                   "claims": {
-                    "scope": "identity-api:read management-api:read issuer-admin-api:read"
+                    "scope": "identity-api:read management-api:read issuer-admin-api:read siglet-api:read"
                   }
                 }'
               if [ "$RESP_STATUS" -eq 409 ]; then

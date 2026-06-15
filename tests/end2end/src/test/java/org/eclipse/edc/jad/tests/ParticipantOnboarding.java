@@ -28,7 +28,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.eclipse.edc.jad.tests.Constants.IDENTITYHUB_BASE_URL;
-import static org.eclipse.edc.jad.tests.KeycloakApi.createKeycloakToken;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.equalTo;
 
@@ -71,9 +70,7 @@ public record ParticipantOnboarding(String participantName, String participantCo
                 .hasFieldOrProperty("credentialRequest");
 
         var participantContextId = state.get("participantContextId").toString();
-        var secret = getVaultSecret(participantContextId);
-
-        var token = createKeycloakToken(participantContextId, secret, "identity-api:write", "identity-api:read");
+        var token = TokenExchange.getParticipantToken("cfm-agents", participantContextId, "read write");
 
         monitor.info("Waiting for credential issuance");
 
@@ -82,7 +79,7 @@ public record ParticipantOnboarding(String participantName, String participantCo
         waitForCredentialIssuance(participantContextId, token, holderPid.toString());
 
 
-        return new ClientCredentials(participantContextId, secret);
+        return new ClientCredentials(participantContextId, token);
     }
 
     private String getDataspaceProfileId() {

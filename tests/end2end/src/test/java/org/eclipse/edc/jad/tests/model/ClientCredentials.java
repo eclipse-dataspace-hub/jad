@@ -14,5 +14,5 @@
 
 package org.eclipse.edc.jad.tests.model;
 
-public record ClientCredentials(String clientId, String clientSecret) {
+public record ClientCredentials(String participantContextId, String participantToken) {
 }
