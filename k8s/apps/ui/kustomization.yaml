@@ -15,5 +15,5 @@ resources:
   - redline.yaml
   - redline-config.yaml
   - redline-seed-job.yaml
-  - ui.yaml
-  - ui-config.yaml
+#  - ui.yaml
+#  - ui-config.yaml

@@ -79,7 +79,7 @@ spec:
                 -d '{
                     "clientIdentifier": "system:serviceaccount:edc-v:seed-jobs",
                     "participantContext": "issuer",
-                    "scopes": ["read","write", "admin"],
+                    "scopes": ["read","write", "admin", "cfm-read", "cfm-write"],
                     "audiences": ["edcv"]
                 }'
               if [ "$RESP_STATUS" -eq 409 ]; then

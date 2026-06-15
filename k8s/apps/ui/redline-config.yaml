@@ -35,3 +35,6 @@ data:
   TENANT-MANAGER_URL: "http://tenant-manager.edc-v.svc.cluster.local:8080"
   SIGLET_URL: "http://siglet.edc-v.svc.cluster.local:8080"
   CORS_ALLOWED_ORIGIN: "http://jad.localhost"
+  TOKEN_EXCHANGE_URL: "http://jwtlet.edc-v.svc.cluster.local:8080"
+  TOKEN_EXCHANGE_FILE_PATH: "/var/run/secrets/jwtlet/token"
+  TOKEN_EXCHANGE_AUDIENCE: "edcv"
