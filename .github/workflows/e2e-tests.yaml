@@ -114,6 +114,13 @@ jobs:
             --for=condition=ready pod \
             --selector=type=edcv-infra \
             --timeout=300s
+          
+          # wait for all init jobs (vault, jwtlet)
+          kubectl wait --namespace edc-v \
+            --selector=type=edcv-job \
+            --for=condition=complete job --all \
+            --timeout=300s
+          
 
 
       - name: "Deploy JAD applications"
@@ -133,6 +140,16 @@ jobs:
             --selector=type=edcv-job \
             --for=condition=complete job --all \
             --timeout=300s
+          
+          
+      - name: "Show pod status on timeout"
+        if: failure()
+        run: |-
+          echo "Wait command timed out or failed. Showing pod status in edc-v namespace:"
+          kubectl get pods -n edc-v
+          echo ""
+          echo "Detailed pod descriptions:"
+          kubectl describe pods -n edc-v
 
       - name: "Run E2E Test"
         run: |
