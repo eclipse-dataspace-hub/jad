@@ -4,23 +4,7 @@ meta {
 }
 
 auth {
-  mode: oauth2
-}
-
-auth:oauth2 {
-  grant_type: client_credentials
-  access_token_url: {{KC_HOST}}/realms/edcv/protocol/openid-connect/token
-  refresh_token_url: 
-  client_id: admin
-  client_secret: edc-v-admin-secret
-  scope: management-api:read management-api:write
-  credentials_placement: body
-  credentials_id: credentials
-  token_source: access_token
-  token_placement: header
-  token_header_prefix: Bearer
-  auto_fetch_token: true
-  auto_refresh_token: false
+  mode: inherit
 }
 
 vars:pre-request {

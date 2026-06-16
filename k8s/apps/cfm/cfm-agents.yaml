@@ -34,23 +34,8 @@ spec:
     spec:
       serviceAccountName: cfm-agents
       containers:
-        - name: keycloak-agent
-          image: ghcr.io/eclipse-cfm/cfm/kcagent:latest
-          imagePullPolicy: Always
-          command: [ "/kcagent" ]
-          args: [
-            "--mode=debug"
-          ]
-          envFrom:
-            - configMapRef:
-                name: telemetry-config
-          volumeMounts:
-            - name: keycloak-agent-config
-              mountPath: /etc/appname
-              readOnly: true
-            - name: jwtlet-subject-token
-              mountPath: /var/run/secrets/jwtlet
-              readOnly: true
+        # NOTE: the keycloak-agent has been retired. It only provisioned a per-participant Keycloak
+        # "vault access" client for the old Vault JWT auth; Vault auth now uses token exchange (jwtlet).
         - name: jwtlet-agent
           image: ghcr.io/eclipse-cfm/cfm/jwtletagent:latest
           imagePullPolicy: Always
@@ -147,9 +132,6 @@ spec:
                   path: token
                   audience: https://kubernetes.default.svc.cluster.local
                   expirationSeconds: 3600
-        - name: keycloak-agent-config
-          configMap:
-            name: keycloak-agent-config
         - name: edcv-agent-config
           configMap:
             name: edcv-agent-config

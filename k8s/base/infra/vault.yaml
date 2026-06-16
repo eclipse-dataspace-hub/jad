@@ -98,22 +98,17 @@ spec:
               done
               echo "Vault is ready!"
               
-              # Wait for Keycloak to be ready
-              echo "Waiting for Keycloak to be ready..."
-              until wget -q --spider http://keycloak.edc-v.svc.cluster.local:8080/realms/edcv/.well-known/openid-configuration > /dev/null 2>&1; do
-                echo "Keycloak not ready yet, retrying in 2 seconds..."
-                sleep 2
-              done
-              echo "Keycloak is ready!"
-              
+              # Keycloak is no longer required for Vault auth: the JWT auth method below
+              # trusts jwtlet (the token-exchange issuer) instead.
+
               
               # Enable JWT auth method
               vault auth enable jwt || true
 
-              # Configure JWT auth (example: using Keycloak as JWT backend)
-              vault write auth/jwt/config \
-                jwks_url="http://keycloak.edc-v.svc.cluster.local:8080/realms/edcv/protocol/openid-connect/certs" \
-                default_role="participant" || { echo "Failed to configure JWT auth"; exit 1; }
+              # NOTE: auth/jwt/config (which points Vault at jwtlet's JWKS) is written at the END of this
+              # script, once jwtlet is up. jwtlet depends on Vault (its signing key, policy and Kubernetes
+              # auth role are created further below), so configuring it here would create a chicken-and-egg
+              # dependency between Vault bootstrap and jwtlet.
 
               # create mount for participants, each stores their secrets in a subdirectory
               vault secrets enable -path=participants -version=2 kv || { echo "Failed to enable secrets engine"; exit 1; }
@@ -135,7 +130,7 @@ spec:
               }
 
               path "participants/metadata/{{identity.entity.aliases.${ACCESSOR}.name}}/*" {
-                   capabilities = ["list"]
+                   capabilities = ["read", "list", "delete"]
               }
               EOF
 
@@ -153,40 +148,14 @@ spec:
               vault write auth/jwt/role/participant -<<EOF || { echo "Failed to create JWT role"; exit 1; }
               {
                 "role_type": "jwt",
-                "user_claim": "participant_context_id",
-                "bound_issuer": "http://vault.localhost/realms/edcv",
-                "bound_claims": {
-                  "role": "participant"
-                },
+                "user_claim": "sub",
+                "bound_issuer": "http://jwtlet.edc-v.svc.cluster.local:8080",
+                "bound_audiences": ["edcv"],
                 "token_policies": ["participants-restricted", "participant-transit-policy"],
                 "clock_skew_leeway": 60
               }
               EOF
               
-              
-              # Allow full CRUD + list for provisioner
-              cat <<EOF | vault policy write provisioner-policy - || { echo "Failed to write policy"; exit 1; }
-              path "*" {
-                capabilities = ["create", "read", "update", "delete", "list", "sudo"]
-              }
-              
-              path "sys/*" {
-                capabilities = ["create", "read", "update", "delete", "list", "sudo"]
-              }
-              EOF
-              
-              vault write auth/jwt/role/provisioner -<<EOF || { echo "Failed to create provisioner JWT role"; exit 1; }
-              {
-                "role_type": "jwt",
-                "user_claim": "azp",
-                "bound_issuer": "http://vault.localhost/realms/edcv",
-                "bound_claims": {
-                  "role": "provisioner"
-                },
-                "token_policies": ["provisioner-policy"],
-                "clock_skew_leeway": 60
-              }
-              EOF
               
               vault write secret/data/aes-key-alias -<<EOF || { echo "Failed to create ase key entry"; exit 1; }
               {
@@ -283,7 +252,21 @@ spec:
               # With defaults: prefix="signing", claim="jwtlet_pc" -> key="signing-jwtlet_pc"
               echo "Create Ed25519 signing key used by jwtlet"
               vault write -f transit/keys/signing-jwtlet_pc type=ed25519 2>/dev/null || true
-                            
+
+              # jwtlet's prerequisites (signing key, policy, Kubernetes auth role) now exist, so jwtlet can
+              # start. Only now do we point Vault's JWT auth at jwtlet's JWKS. Doing it last avoids the
+              # chicken-and-egg dependency (jwtlet needs Vault, so Vault must not require jwtlet earlier).
+              echo "Waiting for jwtlet to be ready..."
+              until wget -q --spider http://jwtlet.edc-v.svc.cluster.local:8080/health > /dev/null 2>&1; do
+                echo "jwtlet not ready yet, retrying in 2 seconds..."
+                sleep 2
+              done
+              echo "jwtlet is ready!"
+
+              vault write auth/jwt/config \
+                jwks_url="http://jwtlet.edc-v.svc.cluster.local:8080/.well-known/jwks.json" \
+                default_role="participant" || { echo "Failed to configure JWT auth"; exit 1; }
+
               echo "Vault bootstrap completed successfully!"
       restartPolicy: OnFailure
 ---

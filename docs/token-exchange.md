@@ -371,3 +371,73 @@ curl -X GET "http://issuerservice.edc-v.svc.cluster.local:10013/api/management/v
   -H "Authorization: Bearer ${ACCESS_TOKEN}"
 ```
 
+---
+
+## 6. Vault authentication via token exchange
+
+EDC APIs are not the only consumer of jwtlet-issued tokens: the **control plane also authenticates to HashiCorp Vault**
+via the same token-exchange mechanism, replacing the previous Keycloak (OAuth2 client-credentials) flow. This removes the
+need for a per-participant Keycloak "vault client".
+
+### How the control plane authenticates to Vault
+
+The control plane serves multiple participant contexts, each mapped to its own **vault partition**. For a participant's
+partition it:
+
+1. reads its projected ServiceAccount token from `/var/run/secrets/jwtlet/token`;
+2. exchanges it at jwtlet for a participant-scoped token (`resource = <participantContextId>` → `sub`, `audience = edcv`);
+3. presents that token to Vault's JWT auth method (`POST v1/auth/jwt/login`, role `participant`) to obtain a Vault token.
+
+Vault is configured to trust jwtlet in [`k8s/base/infra/vault.yaml`](../k8s/base/infra/vault.yaml):
+
+```shell
+vault write auth/jwt/config \
+  jwks_url="http://jwtlet.edc-v.svc.cluster.local:8080/.well-known/jwks.json" \
+  default_role="participant"
+
+vault write auth/jwt/role/participant - <<EOF
+{ "role_type": "jwt", "user_claim": "sub",
+  "bound_issuer": "http://jwtlet.edc-v.svc.cluster.local:8080",
+  "bound_audiences": ["edcv"],
+  "token_policies": ["participants-restricted", "participant-transit-policy"] }
+EOF
+```
+
+Because `user_claim = sub` and `sub = participantContextId`, the templated policies
+(`participants/data/{{identity.entity.aliases.<accessor>.name}}/*`, `transit/.../participant_<…>*`) automatically scope
+each participant to its own secrets and transit keys. Vault ignores the token's `scope` claim — authorization is by role
+— so the connector can request the lowest tier (`read`).
+
+> The control plane's **default** partition (its own secrets + transit signing key) still uses the static `root` token
+> (`edc.vault.hashicorp.token`). Token exchange is used only for **named** per-participant partitions. The relevant
+> control-plane settings live in [`k8s/apps/edc/controlplane-config.yaml`](../k8s/apps/edc/controlplane-config.yaml)
+> (`edc.vault.hashicorp.auth.tokenexchange.*`, `edc.vault.hashicorp.auth.jwt.role`), and the projected subject-token
+> volume is mounted in [`k8s/apps/edc/controlplane.yaml`](../k8s/apps/edc/controlplane.yaml).
+
+### What onboarding (CFM) must do per participant
+
+The control plane reaching a participant's vault partition requires two things, which the onboarding flow must provision
+when it creates a participant:
+
+1. **A participant context with a credential-free vault config.** The `vaultConfig.credentials` block (Keycloak
+   clientId/secret/tokenUrl) is no longer used and must be omitted — only `vaultConfig.config` (vault URL, secret path,
+   folder path) is needed. See [`create_participant_controlplane.json`](../tests/end2end/src/test/resources/create_participant_controlplane.json).
+2. **A jwtlet mapping** binding the control plane's ServiceAccount to that participant context, so it may exchange for a
+   token whose `sub` is the participant:
+
+   ```shell
+   curl -X POST "http://jwtlet.edc-v.svc.cluster.local:8081/api/v1/mappings" \
+     -H "Authorization: Bearer $(cat /var/run/secrets/jwtlet/token)" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "clientIdentifier": "system:serviceaccount:edc-v:controlplane",
+       "participantContext": "<participant-context-id>",
+       "scopes": ["read"],
+       "audiences": ["edcv"]
+     }'
+   ```
+
+Onboarding should therefore **stop creating the per-participant Keycloak vault client** and instead create the mapping
+above. No per-participant Vault role or policy is needed — the single templated `participant` role covers every
+participant.
+

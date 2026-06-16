@@ -32,6 +32,7 @@ spec:
         platform: edcv
         type: edcv-app
     spec:
+      serviceAccountName: identityhub
       containers:
         - name: identityhub
           image: ghcr.io/eclipse-dataspace-hub/jad/identity-hub:latest
@@ -44,6 +45,11 @@ spec:
           env:
             - name: OTEL_SERVICE_NAME
               value: edc.identityhub
+          volumeMounts:
+            # RFC 8693 subject token used to exchange for a participant-scoped token at jwtlet.
+            - name: jwtlet-subject-token
+              mountPath: /var/run/secrets/jwtlet
+              readOnly: true
           ports:
             - containerPort: 7082
               name: creds-port
@@ -77,6 +83,14 @@ spec:
             failureThreshold: 10
             periodSeconds: 5
             timeoutSeconds: 120
+      volumes:
+        - name: jwtlet-subject-token
+          projected:
+            sources:
+              - serviceAccountToken:
+                  path: token
+                  audience: https://kubernetes.default.svc.cluster.local
+                  expirationSeconds: 3600
 
 ---
 apiVersion: v1

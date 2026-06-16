@@ -41,7 +41,14 @@ data:
 
   # persistence and vault
   edc.vault.hashicorp.url: "http://vault.edc-v.svc.cluster.local:8200"
+  # Default vault partition (issuerservice's own secrets) uses the static root token.
   edc.vault.hashicorp.token: "root"
+  # Named, per-participant vault partitions (the "issuer" context) authenticate via token exchange (jwtlet).
+  edc.vault.hashicorp.auth.tokenexchange.url: "http://jwtlet.edc-v.svc.cluster.local:8080"
+  edc.vault.hashicorp.auth.tokenexchange.subjecttokenpath: "/var/run/secrets/jwtlet/token"
+  edc.vault.hashicorp.auth.tokenexchange.audience: "edcv"
+  edc.vault.hashicorp.auth.tokenexchange.scope: "read"
+  edc.vault.hashicorp.auth.jwt.role: "participant"
 
   edc.datasource.default.url: "jdbc:postgresql://postgres.edc-v.svc.cluster.local:5432/issuerservice"
   edc.datasource.default.user: "issuer"
@@ -51,10 +58,7 @@ data:
 
   edc.encryption.aes.key.alias: "aes-key-alias"
   # Oauth2 config
-  # KeyCloak takes the `iss` claim's host from the request URL. For now, this is the URL defined in the ingress route.
-  # to do this properly, we should probably configure the following properties on the ingress route:
-  #    proxy_set_header Host $host;
-  #    proxy_set_header X-Forwarded-Proto $scheme;
+  # EDC verifies inbound tokens against jwtlet (the token-exchange issuer); see edc.iam.oauth2.* below.
   edc.iam.oauth2.issuer: "http://jwtlet.edc-v.svc.cluster.local:8080"
   edc.iam.oauth2.jwks.url: "http://jwtlet.edc-v.svc.cluster.local:8080/.well-known/jwks.json"
 

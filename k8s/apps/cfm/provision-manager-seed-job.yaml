@@ -119,25 +119,6 @@ spec:
               echo "================================================"
 
               echo ""
-              echo "Step 1: Create network-activity ActivityDefinition"
-              echo "---------------------------------------------------"
-
-              do_curl -X POST "${PM_BASE_URL}/api/v1alpha1/activity-definitions" \
-                -H "Authorization: Bearer ${EXCHANGED_TOKEN}" \
-                -H "Content-Type: application/json" \
-                -d '{
-                  "description": "Provisions DNS entries",
-                  "inputSchema": {},
-                  "outputSchema": {},
-                  "type": "network-activity"
-                }'
-              if [ "$RESP_STATUS" -ge 400 ]; then
-                echo "ERROR: Failed to create network-activity (HTTP $RESP_STATUS): $RESP_BODY"
-                exit 1
-              fi
-              echo "✓ network-activity created"
-
-              echo ""
               echo "Step 2: Create edcv-activity ActivityDefinition"
               echo "------------------------------------------------"
 
@@ -195,25 +176,6 @@ spec:
               echo "✓ registration-activity created"
 
               echo ""
-              echo "Step 5: Create keycloak-activity ActivityDefinition"
-              echo "----------------------------------------------------"
-
-              do_curl -X POST "${PM_BASE_URL}/api/v1alpha1/activity-definitions" \
-                -H "Authorization: Bearer ${EXCHANGED_TOKEN}" \
-                -H "Content-Type: application/json" \
-                -d '{
-                  "description": "Provisions Keycloak clients",
-                  "inputSchema": {},
-                  "outputSchema": {},
-                  "type": "keycloak-activity"
-                }'
-              if [ "$RESP_STATUS" -ge 400 ]; then
-                echo "ERROR: Failed to create keycloak-activity (HTTP $RESP_STATUS): $RESP_BODY"
-                exit 1
-              fi
-              echo "✓ keycloak-activity created"
-
-              echo ""
               echo "Step 6: Create onboarding-activity ActivityDefinition"
               echo "------------------------------------------------------"
 
@@ -268,11 +230,6 @@ spec:
                       "dependsOn": []
                     },
                     {
-                      "id": "kc-client-remover",
-                      "type": "keycloak-activity",
-                      "dependsOn": ["offboarding-agent", "connector-rollback", "registration-rollback"]
-                    },
-                    {
                       "id": "registration-rollback",
                       "type": "registration-activity",
                       "dependsOn": []
@@ -288,16 +245,10 @@ spec:
                       "type": "jwtlet-activity"
                     },
                     {
-                      "id": "kc-client-provisioner",
-                      "type": "keycloak-activity",
-                      "dependsOn": ["jwtlet-tokenexchange-agent"]
-                    },
-                    {
                       "id": "registration-agent",
                       "type": "registration-activity",
                       "dependsOn": [
-                        "jwtlet-tokenexchange-agent",
-                        "kc-client-provisioner"
+                        "jwtlet-tokenexchange-agent"
                       ]
                     },
                     {
@@ -305,7 +256,6 @@ spec:
                       "type": "edcv-activity",
                       "dependsOn": [
                         "jwtlet-tokenexchange-agent",
-                        "kc-client-provisioner", 
                         "identityhub-provisioner"
                       ]
                     },
@@ -313,8 +263,7 @@ spec:
                       "id": "identityhub-provisioner",
                       "type": "identityhub-activity",
                       "dependsOn": [
-                        "jwtlet-tokenexchange-agent",
-                        "kc-client-provisioner"
+                        "jwtlet-tokenexchange-agent"
                       ]
                     },
                     {

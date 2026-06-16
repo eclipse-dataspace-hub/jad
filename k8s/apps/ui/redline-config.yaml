@@ -26,7 +26,6 @@ data:
   DATABASE_PASSWORD: "redline"
 
   # urls for external services
-  KEYCLOAK_TOKENURL: "http://keycloak.edc-v.svc.cluster.local:8080/realms/edcv/protocol/openid-connect/token"
   CONTROLPLANE_URL: "http://controlplane.edc-v.svc.cluster.local:8081/api/mgmt"
   DATAPLANE_URL: "http://dataplane.edc-v.svc.cluster.local:8186/api/data"
   DATAPLANE_INTERNAL_URL: "http://dataplane.edc-v.svc.cluster.local:8083/api/control"

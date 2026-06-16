@@ -18,4 +18,3 @@ resources:
   - nats.yaml
   - postgres.yaml
   - vault.yaml
-  - keycloak.yaml

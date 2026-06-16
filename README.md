@@ -624,21 +624,10 @@ spec:
 Do this for all `HTTPRoute` declarations in all components' manifests. The `hostnames` field should contain entries
 matching your DNS subdomains that you have also used to create the new Bruno environment.
 
-#### Update the Keycloak realm
-
-In `k8s/base/keycloak.yaml`, find the line that says:
-
-```text
-"bound_issuer": "http://vault.localhost/realms/edcv"
-```
-
-and replace with
-
-```text
-"bound_issuer": "http://vault.yourdomain.com/realms/edcv"
-```
-
-This is crucial for Vault authentication to work properly.
+> **Note:** Vault authentication no longer depends on Keycloak. The control plane authenticates to Vault via token
+> exchange (jwtlet), and Vault's JWT auth method is bound to jwtlet's in-cluster issuer
+> (`http://jwtlet.edc-v.svc.cluster.local:8080`), which does not change for remote deployments. See
+> [Service-to-service authentication](docs/token-exchange.md#6-vault-authentication-via-token-exchange).
 
 #### Tune readiness probes
 

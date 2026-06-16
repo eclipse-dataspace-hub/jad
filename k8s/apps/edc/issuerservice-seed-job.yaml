@@ -52,12 +52,8 @@ spec:
         - name: seed-issuerservice
           image: curlimages/curl:latest
           env:
-            - name: KC_HOST
-              value: "http://keycloak.edc-v.svc.cluster.local:8080"
             - name: ISSUER_CLIENT_ID
               value: "issuer"
-            - name: ISSUER_CLIENT_SECRET
-              value: "issuer-secret"
             - name: JWTLET_TOKEN_URL
               value: "http://jwtlet.edc-v.svc.cluster.local:8080/token"
           volumeMounts:
@@ -78,86 +74,7 @@ spec:
               }
 
               echo "================================================"
-              echo "Step 1: Create Vault Access Token (Issuer)"
-              echo "================================================"
-
-              # Get Keycloak admin token
-              do_curl -X POST "${KC_HOST}/realms/master/protocol/openid-connect/token" \
-                -H "Content-Type: application/x-www-form-urlencoded" \
-                -d "grant_type=password" \
-                -d "username=admin" \
-                -d "password=admin" \
-                -d "client_id=admin-cli"
-              if [ "$RESP_STATUS" -ge 400 ]; then
-                echo "ERROR: Failed to get Keycloak admin token (HTTP $RESP_STATUS): $RESP_BODY"
-                exit 1
-              fi
-              KC_TOKEN=$(printf '%s\n' "$RESP_BODY" | sed -n 's/.*"access_token":"\([^"]*\)".*/\1/p')
-              if [ -z "$KC_TOKEN" ]; then
-                echo "ERROR: Failed to parse Keycloak admin token from response: $RESP_BODY"
-                exit 1
-              fi
-
-              # Create Keycloak client for Vault access
-              echo "Creating Vault Access Client"
-              do_curl -X POST "${KC_HOST}/admin/realms/edcv/clients" \
-                -H "Authorization: Bearer ${KC_TOKEN}" \
-                -H "Content-Type: application/json" \
-                -d '{
-                  "clientId": "'"${ISSUER_CLIENT_ID}"'",
-                  "name": "Issuer Client",
-                  "description": "Client for Vault Access (Issuer)",
-                  "enabled": true,
-                  "secret": "'"${ISSUER_CLIENT_SECRET}"'",
-                  "protocol": "openid-connect",
-                  "publicClient": false,
-                  "serviceAccountsEnabled": true,
-                  "standardFlowEnabled": false,
-                  "directAccessGrantsEnabled": false,
-                  "fullScopeAllowed": true,
-                  "protocolMappers": [
-                    {
-                      "name": "participantContextId",
-                      "protocol": "openid-connect",
-                      "protocolMapper": "oidc-hardcoded-claim-mapper",
-                      "consentRequired": false,
-                      "config": {
-                        "claim.name": "participant_context_id",
-                        "claim.value": "issuer",
-                        "jsonType.label": "String",
-                        "access.token.claim": "true",
-                        "id.token.claim": "true",
-                        "userinfo.token.claim": "true"
-                      }
-                    },
-                    {
-                      "name": "role",
-                      "protocol": "openid-connect",
-                      "protocolMapper": "oidc-hardcoded-claim-mapper",
-                      "consentRequired": false,
-                      "config": {
-                        "claim.name": "role",
-                        "claim.value": "participant",
-                        "jsonType.label": "String",
-                        "access.token.claim": "true",
-                        "id.token.claim": "true",
-                        "userinfo.token.claim": "true"
-                      }
-                    }
-                  ]
-                }'
-              if [ "$RESP_STATUS" -eq 409 ]; then
-                echo "⚠ Vault Access Client already exists"
-              elif [ "$RESP_STATUS" -ge 400 ]; then
-                echo "ERROR: Failed to create Vault Access Client (HTTP $RESP_STATUS): $RESP_BODY"
-                exit 1
-              else
-                echo "✓ Vault Access Client created"
-              fi
-
-              echo ""
-              echo "================================================"
-              echo "Step 2: Create Issuer Tenant in IssuerService"
+              echo "Step 1: Create Issuer Tenant in IssuerService"
               echo "================================================"
 
               # Exchange the projected SA token for an issuer-scoped token via jwtlet (RFC 8693).
@@ -210,11 +127,6 @@ spec:
                   },
                   "additionalProperties": {
                     "edc.vault.hashicorp.config": {
-                      "credentials": {
-                        "clientId": "'"${ISSUER_CLIENT_ID}"'",
-                        "clientSecret": "'"${ISSUER_CLIENT_SECRET}"'",
-                        "tokenUrl": "http://keycloak.edc-v.svc.cluster.local:8080/realms/edcv/protocol/openid-connect/token"
-                      },
                       "config": {
                         "secretPath": "v1/participants",
                         "folderPath": "'"${ISSUER_CLIENT_ID}"'",

@@ -12,8 +12,8 @@
 #
 
 # Traefik ForwardAuth middlewares that validate Bearer tokens via the clearglass
-# service, which calls Keycloak's RFC 7662 token introspection endpoint and
-# checks the required scopes.
+# service, which verifies them against jwtlet's published JWKS and checks the
+# required scopes.
 #
 # Each middleware passes ?scope= query params to clearglass; the token must
 # carry at least one of the listed scopes for the request to be allowed.

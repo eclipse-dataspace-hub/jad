@@ -88,7 +88,7 @@ spec:
   hostnames:
     - jad.localhost
   rules:
-    # No JWT auth — the browser-based UI obtains its own token via Keycloak
+    # No JWT auth on this route — the browser UI is served as static assets
     - matches:
         - path:
             type: PathPrefix

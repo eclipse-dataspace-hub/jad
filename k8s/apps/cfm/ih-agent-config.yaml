@@ -29,14 +29,6 @@ data:
     postgres: true
     dsn: postgres://cfm:cfm@postgres.edc-v.svc.cluster.local:5432/cfm?sslmode=disable
     vault.url: http://vault.edc-v.svc.cluster.local:8200
-    vault.path: secret
-    vault.clientId: provisioner
-    vault.clientSecret: provisioner-secret
-    vault.tokenUrl: http://keycloak.edc-v.svc.cluster.local:8080/realms/edcv/protocol/openid-connect/token
-    vault.softDelete: true
-    keycloak.clientID: provisioner
-    keycloak.clientSecret: provisioner-secret
-    keycloak.tokenUrl:  http://keycloak.edc-v.svc.cluster.local:8080/realms/edcv/protocol/openid-connect/token
     identityhub.url: http://identityhub.edc-v.svc.cluster.local:7081/api/identity
     identityhub.cs.url: http://identityhub.edc-v.svc.cluster.local:7082/api/credentials/v1/participants/%s
     controlplane.protocol.url: http://controlplane.edc-v.svc.cluster.local:8082/api/dsp/%s/http-dsp-profile-2025-1

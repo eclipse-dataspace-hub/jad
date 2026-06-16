@@ -114,6 +114,27 @@ spec:
 
               echo ""
               echo "================================================"
+              echo "Step 2b: Create mapping entry for IssuerService SA"
+              echo "================================================"
+
+              do_curl -X POST "${JWTLET_MGMT_URL}/mappings" \
+                -H "Authorization: Bearer ${TOKEN}" \
+                -H "Content-Type: application/json" \
+                -d '{
+                    "clientIdentifier": "system:serviceaccount:edc-v:issuerservice",
+                    "participantContext": "issuer",
+                    "scopes": ["read"],
+                    "audiences": ["edcv"]
+                }'
+              if [ "$RESP_STATUS" -eq 409 ]; then
+                echo "✓ mapping entry already exists"
+              elif [ "$RESP_STATUS" -ge 400 ]; then
+                echo "ERROR: Failed to create mapping entry (HTTP $RESP_STATUS): $RESP_BODY"
+                exit 1
+              fi
+              echo "✓ mapping entries created"
+
+              echo "================================================"
               echo "Step 3: Create scope mapping entries"
               echo "================================================"
 

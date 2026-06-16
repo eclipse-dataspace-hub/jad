@@ -21,11 +21,6 @@
   },
   "additionalProperties": {
     "edc.vault.hashicorp.config": {
-      "credentials": {
-        "clientId": "{{issuer_clientId}}",
-        "clientSecret": "{{issuer_clientSecret}}",
-        "tokenUrl": "http://keycloak.edc-v.svc.cluster.local:8080/realms/edcv/protocol/openid-connect/token"
-      },
       "config": {
         "secretPath": "v1/participants",
         "folderPath": "{{issuer_clientId}}",

@@ -3,23 +3,11 @@ meta {
 }
 
 auth {
-  mode: oauth2
+  mode: bearer
 }
 
-auth:oauth2 {
-  grant_type: client_credentials
-  access_token_url: http://jad.localhost/auth/realms/edcv/protocol/openid-connect/token
-  refresh_token_url: 
-  client_id: admin
-  client_secret: edc-v-admin-secret
-  scope: provision-manager-api:write
-  credentials_placement: body
-  credentials_id: administration-api
-  token_source: access_token
-  token_placement: header
-  token_header_prefix: Bearer
-  auto_fetch_token: true
-  auto_refresh_token: false
+auth:bearer {
+  token: eyJhbGciOiJFZERTQSIsImtpZCI6InNpZ25pbmctand0bGV0X3BjLTEiLCJ0eXAiOiJKV1QifQ.eyJzdWIiOiJyZWRsaW5lIiwiaXNzIjoiaHR0cDovL2p3dGxldC5lZGMtdi5zdmMuY2x1c3Rlci5sb2NhbDo4MDgwIiwiYXVkIjoiZWRjdiIsImlhdCI6MTc4MTU5OTAxMSwiZXhwIjoxNzgxNjAyNjExLCJuYmYiOjE3ODE1OTkwMTEsImFjdCI6eyJpc3MiOiJodHRwczovL2t1YmVybmV0ZXMuZGVmYXVsdC5zdmMuY2x1c3Rlci5sb2NhbCIsInN1YiI6InN5c3RlbTpzZXJ2aWNlYWNjb3VudDplZGMtdjpyZWRsaW5lIn0sInNjb3BlIjoibWFuYWdlbWVudC1hcGk6YWRtaW4gaWRlbnRpdHktYXBpOmFkbWluIGlzc3Vlci1hZG1pbi1hcGk6YWRtaW4gcHJvdmlzaW9uLW1hbmFnZXItYXBpOnJlYWQgdGVuYW50LW1hbmFnZXItYXBpOnJlYWQgcHJvdmlzaW9uLW1hbmFnZXItYXBpOndyaXRlIHRlbmFudC1tYW5hZ2VyLWFwaTp3cml0ZSJ9.ujGBF6LoFhO2gtHGqlERT6krr79XqyBLMmdxzGIlhoQ2Pjwb5lFtjVJfanD_pgVxAQ3heJJJYsaTxEoVK2clDQ
 }
 
 vars:pre-request {

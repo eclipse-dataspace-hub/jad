@@ -28,8 +28,6 @@ data:
     httpport: 8080
     postgres: true
     dsn: postgres://cfm:cfm@postgres.edc-v.svc.cluster.local:5432/cfm?sslmode=disable
-    keycloak.clientId: provisioner
-    keycloak.clientSecret: provisioner-secret
     issuerservice.url: http://issuerservice.edc-v.svc.cluster.local:10013/api/admin
     issuer.id: issuer # base64 encoded "issuer"
     

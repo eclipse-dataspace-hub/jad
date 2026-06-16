@@ -15,7 +15,6 @@ resources:
   - cfm-agents.yaml
   - edcv-agent-config.yaml
   - ih-agent-config.yaml
-  - keycloak-agent-config.yaml
   - onboarding-agent-config.yaml
   - registration-agent-config.yaml
   - jwtlet-agent-config.yaml

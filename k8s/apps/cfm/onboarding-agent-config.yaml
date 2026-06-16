@@ -28,9 +28,6 @@ data:
     httpport: 8080
     postgres: true
     dsn: postgres://cfm:cfm@postgres.edc-v.svc.cluster.local:5432/cfm?sslmode=disable
-    keycloak.tokenUrl: http://keycloak.edc-v.svc.cluster.local:8080/realms/edcv/protocol/openid-connect/token
-    keycloak.clientId: admin
-    keycloak.clientSecret: edc-v-admin-secret
     identityhub.url: http://identityhub.edc-v.svc.cluster.local:7081/api/identity
     issuerservice.url: http://issuerservice.edc-v.svc.cluster.local:10013/api/admin
     issuer.id: issuer # base64 encoded "issuer"
