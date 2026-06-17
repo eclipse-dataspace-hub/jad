@@ -103,11 +103,16 @@ spec:
           name: token-exchange
         - containerPort: 8081
           name: management
+        envFrom:
+        - configMapRef:
+            name: telemetry-config
         env:
         - name: RUST_LOG
           value: "info"
         - name: JWTLET_CONFIG_FILE
           value: /config/jwtlet.toml
+        - name: OTEL_SERVICE_NAME
+          value: jwtlet
         volumeMounts:
         - name: jwtlet-config
           mountPath: /config
