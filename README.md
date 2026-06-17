@@ -131,7 +131,8 @@ traefik   LoadBalancer   10.96.251.221   172.18.0.3    80:31415/TCP,443:31650/TC
 
 #### 2.1 Option 1: Use pre-built images
 
-There are pre-built images for all JAD apps available from [GHCR](https://github.com/eclipse-dataspace-hub/jad/packages) and the
+There are pre-built images for all JAD apps available from [GHCR](https://github.com/eclipse-dataspace-hub/jad/packages)
+and the
 Connector Fabric Manager images are available from
 the [CFM GitHub Repository](https://github.com/eclipse-cfm/cfm/packages). Those are tested and we
 strongly recommend using them.
@@ -306,6 +307,11 @@ be put in place by running the REST requests in the `CFM - Provision Consumer` f
 in the [Bruno collection](./requests/EDC-V%20Onboarding). Be sure to select the `"KinD Local"` environment in
 Bruno.
 
+Since we switched to token exchange for authentication, the requests in the Bruno collection have been updated to use
+the `Authorization` with a fixed Bearer token. A token can be obtained by creating a service account token with
+`kubectl` and running the token exchange flow. The script `scripts/token.sh` does this
+automatically and print the access token. Run it and copy the token into the Bruno environment at collection level.
+
 ![bruno.png](docs/images/bruno.png)
 
 Those requests can be run manually, one after the other, or via Bruno's "Run" feature. It may be necessary to manually
@@ -425,20 +431,20 @@ unauthenticated at the gateway level.
 
 ### Application routes (`jad.localhost`)
 
-| Service             | Exposed path        | Rewrites to             | Backend port | Auth middleware                        |
-|---------------------|---------------------|-------------------------|--------------|----------------------------------------|
-| Control Plane       | `/api/management`   | `/api/mgmt`             | `8081`       | `jwt-auth-management-api`              |
+| Service             | Exposed path        | Rewrites to            | Backend port | Auth middleware                        |
+|---------------------|---------------------|------------------------|--------------|----------------------------------------|
+| Control Plane       | `/api/management`   | `/api/mgmt`            | `8081`       | `jwt-auth-management-api`              |
 | Identity Hub        | `/api/identity`     | `/api/identity/v1beta` | `7081`       | `jwt-auth-identity-api`                |
 | Issuer Service      | `/api/issuer/admin` | `/api/admin/v1beta`    | `10013`      | `jwt-auth-issuer-admin-api`            |
 | Provision Manager   | `/api/pm`           | `/api/v1beta`          | `8080`       | `jwt-auth-provision-manager-api`       |
-| Tenant Manager      | `/api/tm`           | `/api/v1alpha1`         | `8080`       | `jwt-auth-tenant-manager-api`          |
-| Dataplane (public)  | `/api/dp/public`    | `/`                     | `11002`      | —                                      |
-| Dataplane (control) | `/api/dp/control`   | `/`                     | `8083`       | —                                      |
-| Dataplane (certs)   | `/api/dp/certs`     | `/`                     | `8186`       | —                                      |
-| Siglet              | `/api/siglet`       | `/`                     | `8080`       | —                                      |
-| Redline             | `/redline`          | `/`                     | `8081`       | —                                      |
-| Keycloak            | `/auth`             | `/`                     | `8080`       | — (is the auth server)                 |
-| Web UI              | `/ui`               | `/`                     | `80`         | — (obtains its own token via Keycloak) |
+| Tenant Manager      | `/api/tm`           | `/api/v1alpha1`        | `8080`       | `jwt-auth-tenant-manager-api`          |
+| Dataplane (public)  | `/api/dp/public`    | `/`                    | `11002`      | —                                      |
+| Dataplane (control) | `/api/dp/control`   | `/`                    | `8083`       | —                                      |
+| Dataplane (certs)   | `/api/dp/certs`     | `/`                    | `8186`       | —                                      |
+| Siglet              | `/api/siglet`       | `/`                    | `8080`       | —                                      |
+| Redline             | `/redline`          | `/`                    | `8081`       | —                                      |
+| Keycloak            | `/auth`             | `/`                    | `8080`       | — (is the auth server)                 |
+| Web UI              | `/ui`               | `/`                    | `80`         | — (obtains its own token via Keycloak) |
 
 ### Auth middleware scopes
 
