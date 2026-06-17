@@ -55,21 +55,13 @@ curl_args=(
   --data-urlencode "subject_token_type=urn:ietf:params:oauth:token-type:jwt"
   --data-urlencode "resource=redline"
   --data-urlencode "audience=${IDP_AUDIENCE}"
+  --data-urlencode "scope=${IDP_SCOPE}"
 )
-if [ -n "$IDP_SCOPE" ]; then curl_args+=(--data-urlencode "scope=${IDP_SCOPE}"); fi
 
 RESPONSE="$(curl "${curl_args[@]}")"
 
 # ---- 3. extract + print access_token -------------------------------------
-if command -v jq >/dev/null 2>&1; then
-  ACCESS_TOKEN="$(printf '%s' "$RESPONSE" | jq -r '.access_token // empty')"
-else
-  # No jq: a JWT value contains only URL-safe base64 chars, so this is safe.
-  ACCESS_TOKEN="$(printf '%s' "$RESPONSE" \
-    | grep -o '"access_token"[[:space:]]*:[[:space:]]*"[^"]*"' \
-    | head -n1 \
-    | sed 's/.*"access_token"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')"
-fi
+ACCESS_TOKEN="$(printf '%s' "$RESPONSE" | jq -r '.access_token // empty')"
 
 if [ -z "$ACCESS_TOKEN" ]; then
   echo "error: no access_token in IDP response:" >&2
