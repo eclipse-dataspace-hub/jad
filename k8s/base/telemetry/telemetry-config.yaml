@@ -19,6 +19,9 @@ metadata:
   namespace: edc-v
 
 data:
+  # Pin the W3C propagators across every service (Java agent, Go SDK, Rust SDK) so a
+  # runtime default change in any image can't silently drop traceparent at a boundary.
+  OTEL_PROPAGATORS: "tracecontext,baggage"
   OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger.edc-v.svc.cluster.local:4318"
   OTEL_TRACES_EXPORTER: "otlp"
   OTEL_METRICS_EXPORTER: "otlp"
