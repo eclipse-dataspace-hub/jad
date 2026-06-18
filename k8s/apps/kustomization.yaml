@@ -12,32 +12,6 @@
 #
 
 resources:
-  - controlplane-config.yaml
-  - controlplane.yaml
-  - dataplane-config.yaml
-  - dataplane.yaml
-  - issuerservice-config.yaml
-  - issuerservice.yaml
-  - issuerservice-seed-job.yaml
-  - identityhub-config.yaml
-  - identityhub.yaml
-  - edcv-agent-config.yaml
-  - ih-agent-config.yaml
-  - keycloak-agent-config.yaml
-  - onboarding-agent-config.yaml
-  - registration-agent-config.yaml
-  - provision-manager.yaml
-  - provision-manager-config.yaml
-  - provision-manager-seed-job.yaml
-  - tenant-manager.yaml
-  - tenant-manager-config.yaml
-  - tenant-manager-seed-job.yaml
-  - telemetry-config.yaml
-  - cfm-agents.yaml
-  - redline.yaml
-  - redline-config.yaml
-  - redline-seed-job.yaml
-  - ui.yaml
-  - ui-config.yaml
-  - siglet-config.yaml
-  - siglet.yaml
+  - edc/
+  - cfm/
+  - ui/

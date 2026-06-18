@@ -3,16 +3,16 @@ format.version = "1.1"
 
 [versions]
 awaitility = "4.3.0"
-bouncyCastle-jdk18on = "1.83"
+bouncyCastle-jdk18on = "1.84"
 edc = "0.18.0-SNAPSHOT"
-edc-build = "1.5.1"
+edc-build = "1.5.2"
 jackson = "2.21.2"
 jackson-annotations = "2.20"
 restAssured = "6.0.0"
 rsApi = "4.0.0"
-swagger = "2.2.47"
 jersey = "4.0.2"
-postgres = "42.7.10"
+swagger = "2.2.50"
+postgres = "42.7.11"
 opentelemetry = "2.26.1"
 
 [libraries]
@@ -44,6 +44,7 @@ edc-fixtures-mgmtapi = { module = "org.eclipse.edc:management-api-test-fixtures"
 edc-monitor-otel = { module = "org.eclipse.edc:otel-monitor", version.ref = "edc" }
 edc-monitor-console = { module = "org.eclipse.edc:console-monitor", version.ref = "edc" }
 edc-events-nats = { module = "org.eclipse.edc:events-nats", version.ref = "edc" }
+edc-vault-transit = { module = "org.eclipse.edc:identity-hub-keypairs-transit", version.ref = "edc" }
 
 # EDC spi dependencies
 edc-spi-web = { module = "org.eclipse.edc:web-spi", version.ref = "edc" }

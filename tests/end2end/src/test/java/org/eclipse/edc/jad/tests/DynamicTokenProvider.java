@@ -30,7 +30,7 @@ public class DynamicTokenProvider implements OauthTokenProvider {
     public Supplier<String> defaultTokenGenerator;
 
     @Override
-    public String createToken(String participantContextId, String role) {
+    public String createToken(String participantContextId) {
         if (participantContextId == null) {
             if (defaultTokenGenerator == null) {
                 throw new IllegalStateException("No default token generator registered");
@@ -39,6 +39,10 @@ public class DynamicTokenProvider implements OauthTokenProvider {
         } else {
             return Objects.requireNonNull(tokenGenerators.get(participantContextId)).get();
         }
+    }
+
+    public String createAdminToken() {
+        return createToken(null);
     }
 
     public void registerTokenGenerator(String participantContextId, Supplier<String> tokenGenerator) {
@@ -54,6 +58,6 @@ public class DynamicTokenProvider implements OauthTokenProvider {
      */
     public RequestSpecification apiRequest() {
         return given()
-                .header("Authorization", "Bearer " + createToken(null, "admin"));
+                .header("Authorization", "Bearer " + createAdminToken());
     }
 }

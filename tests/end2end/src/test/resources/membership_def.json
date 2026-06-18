@@ -24,6 +24,6 @@
     }
   ],
   "rules": [],
-  "format": "VC2_0_JOSE",
+  "format": "vc20-bssl/jwt",
   "validity": "604800"
 }

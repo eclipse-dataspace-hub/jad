@@ -1,0 +1,317 @@
+#
+# Copyright (c) 2025 Metaform Systems, Inc.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License, Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Contributors:
+#      Metaform Systems, Inc. - initial API and implementation
+#
+
+## This seed job creates a tenant for the "issuer" in the IssuerService, as well as creates an Attestation Definition and
+## Credential Definition.
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: issuerservice-seed
+  namespace: edc-v
+  labels:
+    app: issuerservice-seed
+    platform: edcv
+    type: edcv-job
+spec:
+  backoffLimit: 5
+  template:
+    metadata:
+      labels:
+        app: issuerservice-seed
+        platform: edcv
+        type: edcv-job
+    spec:
+      serviceAccountName: seed-jobs
+      restartPolicy: OnFailure
+      initContainers:
+        # Wait for issuerservice to be ready
+        - name: wait-for-issuerservice
+          image: curlimages/curl:latest
+          command:
+            - sh
+            - -c
+            - |
+              until curl -sf http://issuerservice.edc-v.svc.cluster.local:10010/api/check/readiness; do
+                echo "Waiting for issuerservice to be ready..."
+                sleep 5
+              done
+              echo ""
+              echo "IssuerService is ready!"
+      containers:
+        - name: seed-issuerservice
+          image: curlimages/curl:latest
+          env:
+            - name: ISSUER_CLIENT_ID
+              value: "issuer"
+            - name: JWTLET_TOKEN_URL
+              value: "http://jwtlet.edc-v.svc.cluster.local:8080/token"
+          volumeMounts:
+            - name: jwtlet-subject-token
+              mountPath: /var/run/secrets/jwtlet
+              readOnly: true
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+
+              # Executes a curl request and stores the response body in RESP_BODY and status code in RESP_STATUS.
+              do_curl() {
+                RESP=$(curl -s -w "\n%{http_code}" "$@")
+                RESP_STATUS=$(printf '%s\n' "$RESP" | tail -1)
+                RESP_BODY=$(printf '%s\n' "$RESP" | sed '$d')
+              }
+
+              echo "================================================"
+              echo "Step 1: Create Issuer Tenant in IssuerService"
+              echo "================================================"
+
+              # Exchange the projected SA token for an issuer-scoped token via jwtlet (RFC 8693).
+              SA_TOKEN=$(cat /var/run/secrets/jwtlet/token)
+              if [ -z "$SA_TOKEN" ]; then
+                echo "ERROR: subject token at /var/run/secrets/jwtlet/token is empty"
+                exit 1
+              fi
+              
+              do_curl -X POST "${JWTLET_TOKEN_URL}" \
+                -H "Content-Type: application/x-www-form-urlencoded" \
+                --data-urlencode "grant_type=urn:ietf:params:oauth:grant-type:token-exchange" \
+                --data-urlencode "subject_token=${SA_TOKEN}" \
+                --data-urlencode "resource=issuer" \
+                --data-urlencode "scope=admin" \
+                --data-urlencode "audience=edcv"
+              if [ "$RESP_STATUS" -ge 400 ]; then
+                echo "ERROR: Failed to exchange SA token (HTTP $RESP_STATUS): $RESP_BODY"
+                exit 1
+              fi
+              EXCHANGED_TOKEN=$(printf '%s\n' "$RESP_BODY" | sed -n 's/.*"access_token":"\([^"]*\)".*/\1/p')
+              if [ -z "$EXCHANGED_TOKEN" ]; then
+                echo "ERROR: Failed to parse exchanged token from response: $RESP_BODY"
+                exit 1
+              fi
+              echo "✓ Admin-scoped token obtained"
+
+              # Create issuer tenant
+              do_curl -X POST "http://issuerservice.edc-v.svc.cluster.local:10015/api/identity/v1beta/participants" \
+                -H "Authorization: Bearer ${EXCHANGED_TOKEN}" \
+                -H "Content-Type: application/json" \
+                -d '{
+                  "roles": ["admin"],
+                  "serviceEndpoints": [
+                    {
+                      "type": "IssuerService",
+                      "serviceEndpoint": "http://issuerservice.edc-v.svc.cluster.local:10012/api/issuance/v1beta/participants/issuer",
+                      "id": "issuer-service-1"
+                    }
+                  ],
+                  "active": true,
+                  "participantContextId": "issuer",
+                  "did": "did:web:issuerservice.edc-v.svc.cluster.local%3A10016:issuer",
+                  "key": {
+                    "keyId": "did:web:issuerservice.edc-v.svc.cluster.local%3A10016:issuer#key-1",
+                    "privateKeyAlias": "key-1",
+                    "keyGeneratorParams": {
+                      "algorithm": "EdDSA"
+                    }
+                  },
+                  "additionalProperties": {
+                    "edc.vault.hashicorp.config": {
+                      "config": {
+                        "secretPath": "v1/participants",
+                        "folderPath": "'"${ISSUER_CLIENT_ID}"'",
+                        "vaultUrl": "http://vault.edc-v.svc.cluster.local:8200"
+                      }
+                    }
+                  }
+                }'
+              if [ "$RESP_STATUS" -eq 409 ]; then
+                echo "⚠ Issuer tenant already exists"
+              elif [ "$RESP_STATUS" -ge 400 ]; then
+                echo "ERROR: Failed to create issuer tenant (HTTP $RESP_STATUS): $RESP_BODY"
+                exit 1
+              else
+                echo "✓ Issuer tenant created"
+              fi
+
+              echo ""
+              echo "================================================"
+              echo "Step 3: Create AttestationDefinitions"
+              echo "================================================"
+              
+              # exchange SA token for a narrow-scoped participant token
+              do_curl -X POST "${JWTLET_TOKEN_URL}" \
+                -H "Content-Type: application/x-www-form-urlencoded" \
+                --data-urlencode "grant_type=urn:ietf:params:oauth:grant-type:token-exchange" \
+                --data-urlencode "subject_token=${SA_TOKEN}" \
+                --data-urlencode "resource=issuer" \
+                --data-urlencode "scope=write" \
+                --data-urlencode "audience=edcv"
+              if [ "$RESP_STATUS" -ge 400 ]; then
+                echo "ERROR: Failed to exchange SA token (HTTP $RESP_STATUS): $RESP_BODY"
+                exit 1
+              fi
+              EXCHANGED_TOKEN=$(printf '%s\n' "$RESP_BODY" | sed -n 's/.*"access_token":"\([^"]*\)".*/\1/p')
+              if [ -z "$EXCHANGED_TOKEN" ]; then
+                echo "ERROR: Failed to parse exchanged token from response: $RESP_BODY"
+                exit 1
+              fi
+              echo "✓ Participant-scoped token obtained"
+
+              # Create attestation definitions
+              echo "Creating Membership AttestationDefinition"
+              do_curl -X POST "http://issuerservice.edc-v.svc.cluster.local:10013/api/admin/v1beta/participants/issuer/attestations" \
+                -H "Authorization: Bearer ${EXCHANGED_TOKEN}" \
+                -H "Content-Type: application/json" \
+                -d '{
+                  "attestationType": "membership",
+                  "configuration": {},
+                  "id": "membership-attestation-def-1"
+                }'
+              if [ "$RESP_STATUS" -eq 409 ]; then
+                echo "⚠ Membership AttestationDefinition already exists"
+              elif [ "$RESP_STATUS" -ge 400 ]; then
+                echo "ERROR: Failed to create Membership AttestationDefinition (HTTP $RESP_STATUS): $RESP_BODY"
+                exit 1
+              else
+                echo "✓ Membership AttestationDefinition created"
+              fi
+
+              echo "Creating Manufacturer AttestationDefinition"
+              do_curl -X POST "http://issuerservice.edc-v.svc.cluster.local:10013/api/admin/v1beta/participants/issuer/attestations" \
+                -H "Authorization: Bearer ${EXCHANGED_TOKEN}" \
+                -H "Content-Type: application/json" \
+                -d '{
+                  "attestationType": "manufacturer",
+                  "configuration": {},
+                  "id": "manufacturer-attestation-def-1"
+                }'
+              if [ "$RESP_STATUS" -eq 409 ]; then
+                echo "⚠ Manufacturer AttestationDefinition already exists"
+              elif [ "$RESP_STATUS" -ge 400 ]; then
+                echo "ERROR: Failed to create Manufacturer AttestationDefinition (HTTP $RESP_STATUS): $RESP_BODY"
+                exit 1
+              else
+                echo "✓ Manufacturer AttestationDefinition created"
+              fi
+
+              echo ""
+              echo "================================================"
+              echo "Step 4: Create CredentialDefinitions"
+              echo "================================================"
+
+              # Create credential definitions
+              echo "Creating Membership CredentialDefinition"
+              do_curl -X POST "http://issuerservice.edc-v.svc.cluster.local:10013/api/admin/v1beta/participants/issuer/credentialdefinitions" \
+                -H "Authorization: Bearer ${EXCHANGED_TOKEN}" \
+                -H "Content-Type: application/json" \
+                -d '{
+                  "attestations": ["membership-attestation-def-1"],
+                  "credentialType": "MembershipCredential",
+                  "id": "membership-credential-def",
+                  "jsonSchema": "{}",
+                  "jsonSchemaUrl": "https://example.com/schema/membership-credential.json",
+                  "mappings": [
+                    {
+                      "input": "membership",
+                      "output": "credentialSubject.membership",
+                      "required": true
+                    },
+                    {
+                      "input": "membershipType",
+                      "output": "credentialSubject.membershipType",
+                      "required": "true"
+                    },
+                    {
+                      "input": "membershipStartDate",
+                      "output": "credentialSubject.membershipStartDate",
+                      "required": true
+                    },
+                    {
+                      "input": "id",
+                      "output": "credentialSubject.id",
+                      "required": true
+                    }
+                  ],
+                  "rules": [],
+                  "format": "vc20-bssl/jwt",
+                  "validity": "604800"
+                }'
+              if [ "$RESP_STATUS" -eq 409 ]; then
+                echo "⚠ Membership CredentialDefinition already exists"
+              elif [ "$RESP_STATUS" -ge 400 ]; then
+                echo "ERROR: Failed to create Membership CredentialDefinition (HTTP $RESP_STATUS): $RESP_BODY"
+                exit 1
+              else
+                echo "✓ Membership CredentialDefinition created"
+              fi
+
+              echo "Creating Manufacturer CredentialDefinition"
+              do_curl -X POST "http://issuerservice.edc-v.svc.cluster.local:10013/api/admin/v1beta/participants/issuer/credentialdefinitions" \
+                -H "Authorization: Bearer ${EXCHANGED_TOKEN}" \
+                -H "Content-Type: application/json" \
+                -d '{
+                  "attestations": ["manufacturer-attestation-def-1"],
+                  "credentialType": "ManufacturerCredential",
+                  "id": "manufacturer-credential-def",
+                  "jsonSchema": "{}",
+                  "jsonSchemaUrl": "https://example.com/schema/manufacturer-credential.json",
+                  "mappings": [
+                    {
+                      "input": "contractVersion",
+                      "output": "credentialSubject.contractVersion",
+                      "required": true
+                    },
+                    {
+                      "input": "component_types",
+                      "output": "credentialSubject.part_types",
+                      "required": "true"
+                    },
+                    {
+                      "input": "since",
+                      "output": "credentialSubject.since",
+                      "required": true
+                    },
+                    {
+                      "input": "id",
+                      "output": "credentialSubject.id",
+                      "required": true
+                    }
+                  ],
+                  "rules": [],
+                  "format": "vc20-bssl/jwt",
+                  "validity": "604800"
+                }'
+              if [ "$RESP_STATUS" -eq 409 ]; then
+                echo "⚠ Manufacturer CredentialDefinition already exists"
+              elif [ "$RESP_STATUS" -ge 400 ]; then
+                echo "ERROR: Failed to create Manufacturer CredentialDefinition (HTTP $RESP_STATUS): $RESP_BODY"
+                exit 1
+              else
+                echo "✓ Manufacturer CredentialDefinition created"
+              fi
+
+              echo ""
+              echo "================================================"
+              echo "IssuerService seeding completed successfully!"
+              echo "================================================"
+      volumes:
+        # RFC 8693 subject_token exchanged at jwtlet's /token endpoint for an
+        # issuer-scoped token. Audience must match jwtlet's `client_audience`.
+        - name: jwtlet-subject-token
+          projected:
+            sources:
+              - serviceAccountToken:
+                  path: token
+                  audience: https://kubernetes.default.svc.cluster.local
+                  expirationSeconds: 3600

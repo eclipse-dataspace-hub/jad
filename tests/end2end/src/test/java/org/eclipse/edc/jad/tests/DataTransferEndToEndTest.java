@@ -51,8 +51,6 @@ import static org.eclipse.edc.jad.tests.Constants.CONTROLPLANE_PROTOCOL_URL;
 import static org.eclipse.edc.jad.tests.Constants.DATAPLANE_BASE_URL;
 import static org.eclipse.edc.jad.tests.Constants.SIGLET_BASE_URL;
 import static org.eclipse.edc.jad.tests.Constants.TM_BASE_URL;
-import static org.eclipse.edc.jad.tests.KeycloakApi.createKeycloakToken;
-import static org.eclipse.edc.jad.tests.KeycloakApi.getAccessToken;
 
 /**
  * This test class executes a series of REST requests against several components to verify that an end-to-end
@@ -86,7 +84,7 @@ public class DataTransferEndToEndTest {
 
         var slug = Instant.now().getEpochSecond();
 
-        DYNAMIC_TOKEN_PROVIDER.setDefaultTokenGenerator(() -> createKeycloakToken("admin", "edc-v-admin-secret", "issuer-admin-api:write", "identity-api:write", "management-api:write", "identity-api:read"));
+        DYNAMIC_TOKEN_PROVIDER.setDefaultTokenGenerator(() -> TokenExchange.getParticipantToken("redline", "admin cfm-write cfm-read read write"));
 
         createMembershipCelExpression();
         createManufacturerCelExpression();
@@ -156,28 +154,29 @@ public class DataTransferEndToEndTest {
         // seed provider
         MONITOR.info("Seeding provider");
 
-        DYNAMIC_TOKEN_PROVIDER.registerTokenGenerator(providerCredentials.clientId(), () -> getAccessToken(providerCredentials.clientId(), providerCredentials.clientSecret(), "management-api:write management-api:read").accessToken());
-        DYNAMIC_TOKEN_PROVIDER.registerTokenGenerator(consumerCredentials.clientId(), () -> getAccessToken(consumerCredentials.clientId(), consumerCredentials.clientSecret(), "management-api:write management-api:read").accessToken());
+        DYNAMIC_TOKEN_PROVIDER.registerTokenGenerator(providerCredentials.participantContextId(), () -> providerCredentials.participantToken());
+        DYNAMIC_TOKEN_PROVIDER.registerTokenGenerator(consumerCredentials.participantContextId(), () -> consumerCredentials.participantToken());
 
-        var assetId = createCertAsset(providerCredentials.clientId());
-        var policyDefId = createPolicyDef(providerCredentials.clientId(), "MembershipCredential");
-        createContractDef(providerCredentials.clientId(), policyDefId, policyDefId, assetId);
+        var assetId = createCertAsset(providerCredentials.participantContextId());
+        var policyDefId = createPolicyDef(providerCredentials.participantContextId(), "MembershipCredential");
+        createContractDef(providerCredentials.participantContextId(), policyDefId, policyDefId, assetId);
         // Register dataplanes
-        registerDataPlane(providerCredentials.clientId());
-        registerDataPlane(consumerCredentials.clientId());
+        registerDataPlane(providerCredentials.participantContextId());
+        registerDataPlane(consumerCredentials.participantContextId());
 
         MONITOR.info("starting data transfer");
 
-        var transferId = MANAGEMENT_API_CLIENT.startTransfer(consumerCredentials.clientId(), "http-dsp-profile-2025-1",
-                providerCredentials.clientId(), CONTROLPLANE_PROTOCOL_URL.formatted(providerCredentials.clientId()), providerContextId, assetId, "HttpData-PULL");
+        var transferId = MANAGEMENT_API_CLIENT.startTransfer(consumerCredentials.participantContextId(), "http-dsp-profile-2025-1",
+                providerCredentials.participantContextId(), CONTROLPLANE_PROTOCOL_URL.formatted(providerCredentials.participantContextId()), providerContextId, assetId, "HttpData-PULL");
 
 
         MONITOR.info("Fetching siglet token for transferId: " + transferId);
 
         var transferResponse = DYNAMIC_TOKEN_PROVIDER.apiRequest()
                 .baseUri(SIGLET_BASE_URL)
-                .get("/tokens/%s/%s".formatted(consumerCredentials.clientId(), transferId))
+                .get("/tokens/%s/%s".formatted(consumerCredentials.participantContextId(), transferId))
                 .then()
+                .log().ifError()
                 .statusCode(200)
                 .extract().body().as(Map.class);
 
@@ -201,36 +200,36 @@ public class DataTransferEndToEndTest {
         // seed provider
         MONITOR.info("Seeding provider");
 
-        DYNAMIC_TOKEN_PROVIDER.registerTokenGenerator(providerCredentials.clientId(), () -> getAccessToken(providerCredentials.clientId(), providerCredentials.clientSecret(), "management-api:write management-api:read").accessToken());
-        DYNAMIC_TOKEN_PROVIDER.registerTokenGenerator(consumerCredentials.clientId(), () -> getAccessToken(consumerCredentials.clientId(), consumerCredentials.clientSecret(), "management-api:write management-api:read").accessToken());
-        DYNAMIC_TOKEN_PROVIDER.registerTokenGenerator(manufacturerCredentials.clientId(), () -> getAccessToken(manufacturerCredentials.clientId(), manufacturerCredentials.clientSecret(), "management-api:write management-api:read").accessToken());
+        DYNAMIC_TOKEN_PROVIDER.registerTokenGenerator(providerCredentials.participantContextId(), () -> providerCredentials.participantToken());
+        DYNAMIC_TOKEN_PROVIDER.registerTokenGenerator(consumerCredentials.participantContextId(), () -> consumerCredentials.participantToken());
+        DYNAMIC_TOKEN_PROVIDER.registerTokenGenerator(manufacturerCredentials.participantContextId(), () -> manufacturerCredentials.participantToken());
 
-        var assetId = createAsset(providerCredentials.clientId(), "This asset requires the Manufacturer credential to access");
-        var accessPolicyId = createPolicyDef(providerCredentials.clientId(), "MembershipCredential");
-        var contractPolicyId = createPolicyDef(providerCredentials.clientId(), "ManufacturerCredential");
-        createContractDef(providerCredentials.clientId(), accessPolicyId, contractPolicyId, assetId);
+        var assetId = createAsset(providerCredentials.participantContextId(), "This asset requires the Manufacturer credential to access");
+        var accessPolicyId = createPolicyDef(providerCredentials.participantContextId(), "MembershipCredential");
+        var contractPolicyId = createPolicyDef(providerCredentials.participantContextId(), "ManufacturerCredential");
+        createContractDef(providerCredentials.participantContextId(), accessPolicyId, contractPolicyId, assetId);
 
-        registerDataPlane(providerCredentials.clientId());
-        registerDataPlane(consumerCredentials.clientId());
-        registerDataPlane(manufacturerCredentials.clientId());
+        registerDataPlane(providerCredentials.participantContextId());
+        registerDataPlane(consumerCredentials.participantContextId());
+        registerDataPlane(manufacturerCredentials.participantContextId());
 
-        var negotiationId = MANAGEMENT_API_CLIENT.initContractNegotiation(consumerCredentials.clientId(), "http-dsp-profile-2025-1",
-                assetId, CONTROLPLANE_PROTOCOL_URL.formatted(providerCredentials.clientId()), providerContextId);
+        var negotiationId = MANAGEMENT_API_CLIENT.initContractNegotiation(consumerCredentials.participantContextId(), "http-dsp-profile-2025-1",
+                assetId, CONTROLPLANE_PROTOCOL_URL.formatted(providerCredentials.participantContextId()), providerContextId);
 
 
-        MANAGEMENT_API_CLIENT.waitForContractNegotiationState(consumerCredentials.clientId(), negotiationId, "TERMINATED");
+        MANAGEMENT_API_CLIENT.waitForContractNegotiationState(consumerCredentials.participantContextId(), negotiationId, "TERMINATED");
 
         MONITOR.info("starting data transfer");
 
-        var transferId = MANAGEMENT_API_CLIENT.startTransfer(manufacturerCredentials.clientId(), "http-dsp-profile-2025-1",
-                providerCredentials.clientId(), CONTROLPLANE_PROTOCOL_URL.formatted(providerCredentials.clientId()), providerContextId, assetId, "HttpData-PULL");
+        var transferId = MANAGEMENT_API_CLIENT.startTransfer(manufacturerCredentials.participantContextId(), "http-dsp-profile-2025-1",
+                providerCredentials.participantContextId(), CONTROLPLANE_PROTOCOL_URL.formatted(providerCredentials.participantContextId()), providerContextId, assetId, "HttpData-PULL");
 
 
         MONITOR.info("Fetching siglet token for transferId: " + transferId);
 
         var transferResponse = DYNAMIC_TOKEN_PROVIDER.apiRequest()
                 .baseUri(SIGLET_BASE_URL)
-                .get("/tokens/%s/%s".formatted(manufacturerCredentials.clientId(), transferId))
+                .get("/tokens/%s/%s".formatted(manufacturerCredentials.participantContextId(), transferId))
                 .then()
                 .statusCode(200)
                 .extract().body().as(Map.class);

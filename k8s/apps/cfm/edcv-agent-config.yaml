@@ -1,0 +1,40 @@
+#
+# Copyright (c) 2025 Metaform Systems, Inc.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License, Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Contributors:
+#      Metaform Systems, Inc. - initial API and implementation
+#
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: edcv-agent-config
+  namespace: edc-v
+
+data:
+  # the file must be called "tm", and the extension must be one of
+  # "json", "toml", "yaml", "yml", "properties", "props", "prop", "hcl", "tfvars", "dotenv", "env", "ini"
+  edcvagent.env: |
+    uri: nats://nats.edc-v.svc.cluster.local:4222
+    bucket: cfm-bucket
+    stream: cfm-stream
+    httpport: 8080
+    postgres: true
+    dsn: postgres://cfm:cfm@postgres.edc-v.svc.cluster.local:5432/cfm?sslmode=disable
+    vault.url: http://vault.edc-v.svc.cluster.local:8200
+    identityhub.url: http://identityhub.edc-v.svc.cluster.local:7081/api/identity
+    identityhub.sts.url: http://identityhub.edc-v.svc.cluster.local:7084/api/sts/token
+    identityhub.cs.url: http://identityhub.edc-v.svc.cluster.local:7082/api/credentials/v1/participants/%s
+    controlplane.url: http://controlplane.edc-v.svc.cluster.local:8081/api/mgmt
+    controlplane.protocol.url: http://controlplane.edc-v.svc.cluster.local:8082/api/dsp/%s/http-dsp-profile-2025-1
+    
+    tokenexchange.url: http://jwtlet.edc-v.svc.cluster.local:8080
+    tokenexchange.audience: edcv
+    tokenexchange.tokenFilePath: /var/run/secrets/jwtlet/token

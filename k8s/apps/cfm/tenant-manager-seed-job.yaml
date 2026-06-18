@@ -1,0 +1,203 @@
+#
+# Copyright (c) 2025 Metaform Systems, Inc.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License, Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Contributors:
+#      Metaform Systems, Inc. - initial API and implementation
+#
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: tenant-manager-seed
+  namespace: edc-v
+  labels:
+    app: tenant-manager-seed
+    platform: edcv
+    type: edcv-job
+spec:
+  backoffLimit: 5
+  template:
+    metadata:
+      labels:
+        app: tenant-manager-seed
+        platform: edcv
+        type: edcv-job
+    spec:
+      serviceAccountName: seed-jobs
+      restartPolicy: OnFailure
+      initContainers:
+        # Wait for tenant-manager to be ready
+        - name: wait-for-tenant-manager
+          image: curlimages/curl:latest
+          env:
+            - name: JWTLET_TOKEN_URL
+              value: "http://jwtlet.edc-v.svc.cluster.local:8080/token"
+          volumeMounts:
+            - name: jwtlet-subject-token
+              mountPath: /var/run/secrets/jwtlet
+              readOnly: true
+          command:
+            - sh
+            - -c
+            - |
+              SA_TOKEN=$(cat /var/run/secrets/jwtlet/token)
+              TOKEN=$(curl -sf -X POST "${JWTLET_TOKEN_URL}" \
+                -H "Content-Type: application/x-www-form-urlencoded" \
+                --data-urlencode "grant_type=urn:ietf:params:oauth:grant-type:token-exchange" \
+                --data-urlencode "subject_token=${SA_TOKEN}" \
+                --data-urlencode "resource=issuer" \
+                --data-urlencode "scope=cfm-read" \
+                --data-urlencode "audience=edcv" \
+                | sed -n 's/.*"access_token":"\([^"]*\)".*/\1/p')
+              until curl -sf -H "Authorization: Bearer ${TOKEN}" http://tenant-manager.edc-v.svc.cluster.local:8080/api/v1alpha1/cells; do
+                echo "Waiting for tenant-manager to be ready..."
+                sleep 5
+              done
+              echo "Tenant Manager is ready!"
+      containers:
+        - name: seed-tenant-manager
+          image: curlimages/curl:latest
+          env:
+            - name: TM_BASE_URL
+              value: "http://tenant-manager.edc-v.svc.cluster.local:8080"
+            - name: JWTLET_TOKEN_URL
+              value: "http://jwtlet.edc-v.svc.cluster.local:8080/token"
+          volumeMounts:
+            - name: jwtlet-subject-token
+              mountPath: /var/run/secrets/jwtlet
+              readOnly: true
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+
+              # Executes a curl request and stores the response body in RESP_BODY and status code in RESP_STATUS.
+              do_curl() {
+                RESP=$(curl -s -w "\n%{http_code}" "$@")
+                RESP_STATUS=$(printf '%s\n' "$RESP" | tail -1)
+                RESP_BODY=$(printf '%s\n' "$RESP" | sed '$d')
+              }
+
+              echo "================================================"
+              echo "Step 1: Obtain Provisioner Token"
+              echo "================================================"
+
+              SA_TOKEN=$(cat /var/run/secrets/jwtlet/token)
+              if [ -z "$SA_TOKEN" ]; then
+                echo "ERROR: subject token at /var/run/secrets/jwtlet/token is empty"
+                exit 1
+              fi
+
+              do_curl -X POST "${JWTLET_TOKEN_URL}" \
+                -H "Content-Type: application/x-www-form-urlencoded" \
+                --data-urlencode "grant_type=urn:ietf:params:oauth:grant-type:token-exchange" \
+                --data-urlencode "subject_token=${SA_TOKEN}" \
+                --data-urlencode "resource=issuer" \
+                --data-urlencode "scope=cfm-write" \
+                --data-urlencode "audience=edcv"
+              if [ "$RESP_STATUS" -ge 400 ]; then
+                echo "ERROR: Failed to exchange SA token (HTTP $RESP_STATUS): $RESP_BODY"
+                exit 1
+              fi
+              EXCHANGED_TOKEN=$(printf '%s\n' "$RESP_BODY" | sed -n 's/.*"access_token":"\([^"]*\)".*/\1/p')
+              if [ -z "$EXCHANGED_TOKEN" ]; then
+                echo "ERROR: Failed to parse exchanged token from response: $RESP_BODY"
+                exit 1
+              fi
+              echo "✓ Provisioner token obtained"
+
+              echo ""
+              echo "================================================"
+              echo "Step 2: TenantManager Seeding"
+              echo "================================================"
+
+              # Create Cell
+              echo "Creating Cell..."
+              do_curl -X POST "$TM_BASE_URL/api/v1alpha1/cells" \
+                -H "Authorization: Bearer ${EXCHANGED_TOKEN}" \
+                -H "Content-Type: application/json" \
+                -d '{
+                  "properties": {
+                    "newCellKey": "newCellValue"
+                  },
+                  "state": "active",
+                  "stateTimestamp": "'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"
+                }'
+              if [ "$RESP_STATUS" -ge 400 ]; then
+                echo "ERROR: Failed to create Cell (HTTP $RESP_STATUS): $RESP_BODY"
+                exit 1
+              fi
+
+              CELL_ID=$(printf '%s\n' "$RESP_BODY" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+              echo "✓ Cell created with ID: $CELL_ID"
+
+              # Create Dataspace Profile
+              echo "Creating Dataspace Profile..."
+              do_curl -X POST "$TM_BASE_URL/api/v1alpha1/dataspace-profiles" \
+                -H "Authorization: Bearer ${EXCHANGED_TOKEN}" \
+                -H "Content-Type: application/json" \
+                -d '{
+                  "artifacts": [],
+                  "properties": {},
+                  "dataspaceSpec": {
+                     "protocolStack": ["dsp-2025-1", "dcp-2025-1"],
+                     "credentialSpecs": [{
+                        "type": "MembershipCredential",
+                        "issuer": "did:web:issuerservice.edc-v.svc.cluster.local%3A10016:issuer",
+                        "format": "vc20-bssl/jwt",
+                        "id": "membership-credential-def"
+                      },
+                      {
+                        "type": "ManufacturerCredential",
+                        "issuer": "did:web:issuerservice.edc-v.svc.cluster.local%3A10016:issuer",
+                        "format": "vc20-bssl/jwt",
+                        "id": "manufacturer-credential-def",
+                        "role": "manufacturer"
+                      }
+                    ]
+                  }
+                }'
+              if [ "$RESP_STATUS" -ge 400 ]; then
+                echo "ERROR: Failed to create Dataspace Profile (HTTP $RESP_STATUS): $RESP_BODY"
+                exit 1
+              fi
+
+              DATASPACE_PROFILE_ID=$(printf '%s\n' "$RESP_BODY" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+              echo "✓ Dataspace Profile created with ID: $DATASPACE_PROFILE_ID"
+
+              # Deploy Dataspace Profile
+              echo "Deploying Dataspace Profile..."
+              do_curl -X POST "$TM_BASE_URL/api/v1alpha1/dataspace-profiles/$DATASPACE_PROFILE_ID/deployments" \
+                -H "Authorization: Bearer ${EXCHANGED_TOKEN}" \
+                -H "Content-Type: application/json" \
+                -d '{
+                  "profileId": "'"$DATASPACE_PROFILE_ID"'",
+                  "cellId": "'"$CELL_ID"'"
+                }'
+              if [ "$RESP_STATUS" -ge 400 ]; then
+                echo "ERROR: Failed to deploy Dataspace Profile (HTTP $RESP_STATUS): $RESP_BODY"
+                exit 1
+              fi
+
+              echo "✓ Dataspace Profile deployed successfully"
+              echo "================================================"
+              echo "TenantManager Seeding Complete"
+              echo "================================================"
+      volumes:
+        # RFC 8693 subject_token exchanged at jwtlet's /token endpoint for a
+        # cfm-scoped token. Audience must match jwtlet's `client_audience`.
+        - name: jwtlet-subject-token
+          projected:
+            sources:
+              - serviceAccountToken:
+                  path: token
+                  audience: https://kubernetes.default.svc.cluster.local
+                  expirationSeconds: 3600
+

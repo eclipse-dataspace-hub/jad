@@ -1,0 +1,205 @@
+#
+# Copyright (c) 2025 Metaform Systems, Inc.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License, Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Contributors:
+#      Metaform Systems, Inc. - initial API and implementation
+#
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jwtlet
+  namespace: edc-v
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jwtlet
+      type: edcv-infra
+  template:
+    metadata:
+      labels:
+        app: jwtlet
+        type: edcv-infra
+    spec:
+      serviceAccountName: jwtlet-sa
+      initContainers:
+      - name: wait-for-postgres
+        image: busybox:1.36
+        command:
+        - sh
+        - -c
+        - |
+          until nc -z postgres.edc-v.svc.cluster.local 5432; do
+            echo "Waiting for Postgres..."
+            sleep 2
+          done
+          echo "Postgres is ready"
+      - name: wait-for-vault
+        image: busybox:1.36
+        command:
+        - sh
+        - -c
+        - |
+          until wget -q -O- http://vault.edc-v.svc.cluster.local:8200/v1/sys/health > /dev/null 2>&1; do
+            echo "Waiting for Vault..."
+            sleep 2
+          done
+          echo "Vault is ready"
+      # Native sidecar: starts and stays running before the main containers,
+      # writing the Vault token to /vault/secrets/.vault-token.
+      - name: vault-agent
+        image: hashicorp/vault:latest
+        restartPolicy: Always
+        securityContext:
+          capabilities:
+            add:
+              - IPC_LOCK
+        args:
+          - "agent"
+          - "-config=/vault/config/agent.hcl"
+          - "-log-level=info"
+        volumeMounts:
+        - name: vault-agent-config
+          mountPath: /vault/config
+        - name: vault-secrets
+          mountPath: /vault/secrets
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+      # The jwtlet image is distroless (no shell), so the wait-for-token loop
+      # lives here in busybox rather than in the jwtlet container's command.
+      - name: wait-for-vault-token
+        image: busybox:1.36
+        command:
+        - sh
+        - -c
+        - |
+          echo "Waiting for Vault token..."
+          until [ -f /vault/secrets/.vault-token ]; do
+            sleep 1
+          done
+          echo "Vault token available"
+        volumeMounts:
+        - name: vault-secrets
+          mountPath: /vault/secrets
+          readOnly: true
+      containers:
+      - name: jwtlet
+        image: ghcr.io/eclipse-cfm/jwtlet:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: token-exchange
+        - containerPort: 8081
+          name: management
+        envFrom:
+        - configMapRef:
+            name: telemetry-config
+        env:
+        - name: RUST_LOG
+          value: "info"
+        - name: JWTLET_CONFIG_FILE
+          value: /config/jwtlet.toml
+        - name: OTEL_SERVICE_NAME
+          value: jwtlet
+        volumeMounts:
+        - name: jwtlet-config
+          mountPath: /config
+          readOnly: true
+        - name: vault-secrets
+          mountPath: /vault/secrets
+          readOnly: true
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          failureThreshold: 3
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+      volumes:
+      - name: vault-agent-config
+        configMap:
+          name: vault-agent-config-jwtlet
+      - name: jwtlet-config
+        configMap:
+          name: jwtlet-config
+      - name: vault-secrets
+        emptyDir:
+          medium: Memory
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jwtlet
+  namespace: edc-v
+spec:
+  type: ClusterIP
+  selector:
+    app: jwtlet
+    type: edcv-infra
+  ports:
+    - name: token-exchange
+      protocol: TCP
+      port: 8080
+      targetPort: token-exchange
+    - name: management
+      protocol: TCP
+      port: 8081
+      targetPort: management
+
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: jwtlet
+  namespace: edc-v
+spec:
+  parentRefs:
+    - name: edcv-gateway
+      kind: Gateway
+      sectionName: http
+  hostnames:
+    - jad.localhost
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api/auth
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
+
+      backendRefs:
+        - name: jwtlet
+          port: 8080
+          weight: 1
+

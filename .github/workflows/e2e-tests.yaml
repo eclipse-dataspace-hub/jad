@@ -48,9 +48,8 @@ jobs:
         uses: azure/setup-helm@v5
 
       - name: "Build runtime images"
-        run: |-
-          ./gradlew dockerize
-      
+        run: ./gradlew dockerize
+
       - name: "Create k8s Kind Cluster"
         uses: helm/kind-action@v1.14.0
         with:
@@ -58,10 +57,10 @@ jobs:
 
       - name: "Load runtime images into KinD"
         run: |-
-          kind load docker-image -n jad ghcr.io/metaform/jad/controlplane:latest \
-                                ghcr.io/metaform/jad/dataplane:latest \
-                                ghcr.io/metaform/jad/identity-hub:latest \
-                                ghcr.io/metaform/jad/issuerservice:latest
+          kind load docker-image -n jad ghcr.io/eclipse-dataspace-hub/jad/controlplane:latest \
+                                ghcr.io/eclipse-dataspace-hub/jad/dataplane:latest \
+                                ghcr.io/eclipse-dataspace-hub/jad/identity-hub:latest \
+                                ghcr.io/eclipse-dataspace-hub/jad/issuerservice:latest
 
 
       - name: "Install Traefik Gateway controller"
@@ -93,15 +92,22 @@ jobs:
             --for=condition=ready pod \
             --selector=type=edcv-infra \
             --timeout=300s
+          
+          # wait for all init jobs (vault, jwtlet)
+          kubectl wait --namespace edc-v \
+            --selector=type=edcv-job \
+            --for=condition=complete job --all \
+            --timeout=300s
+          
 
 
       - name: "Deploy JAD applications"
         run: |-
           # this is crucial - without it, KinD would take the prebuilt images from GHCR
-          sed -i "s/imagePullPolicy:.*Always/imagePullPolicy: Never/g" k8s/apps/controlplane.yaml
-          sed -i "s/imagePullPolicy:.*Always/imagePullPolicy: Never/g" k8s/apps/dataplane.yaml
-          sed -i "s/imagePullPolicy:.*Always/imagePullPolicy: Never/g" k8s/apps/issuerservice.yaml
-          sed -i "s/imagePullPolicy:.*Always/imagePullPolicy: Never/g" k8s/apps/identityhub.yaml
+          sed -i "s/imagePullPolicy:.*Always/imagePullPolicy: Never/g" k8s/apps/edc/controlplane.yaml
+          sed -i "s/imagePullPolicy:.*Always/imagePullPolicy: Never/g" k8s/apps/edc/dataplane.yaml
+          sed -i "s/imagePullPolicy:.*Always/imagePullPolicy: Never/g" k8s/apps/edc/issuerservice.yaml
+          sed -i "s/imagePullPolicy:.*Always/imagePullPolicy: Never/g" k8s/apps/edc/identityhub.yaml
           
           kubectl apply -k k8s/apps
 
@@ -111,7 +117,17 @@ jobs:
           kubectl wait --namespace edc-v \
             --selector=type=edcv-job \
             --for=condition=complete job --all \
-            --timeout=300s
+            --timeout=600s
+          
+          
+      - name: "Show pod status on timeout"
+        if: failure()
+        run: |-
+          echo "Wait command timed out or failed. Showing pod status in edc-v namespace:"
+          kubectl get pods -n edc-v
+          echo ""
+          echo "Detailed pod descriptions:"
+          kubectl describe pods -n edc-v
 
       - name: "Run E2E Test"
         run: |

@@ -73,8 +73,8 @@ subprojects {
             val dockerTask: DockerBuildImage = tasks.create("dockerize", DockerBuildImage::class) {
                 val dockerContextDir = project.projectDir
                 dockerFile.set(file("$dockerContextDir/src/main/docker/Dockerfile"))
-                images.add("ghcr.io/metaform/jad/${project.name}:${jadVersion}")
-                images.add("ghcr.io/metaform/jad/${project.name}:latest")
+                images.add("ghcr.io/eclipse-dataspace-hub/jad/${project.name}:${jadVersion}")
+                images.add("ghcr.io/eclipse-dataspace-hub/jad/${project.name}:latest")
 
                 //images.add("${project.name}:latest")
                 // specify platform with the -Dplatform flag:

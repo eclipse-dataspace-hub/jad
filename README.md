@@ -63,7 +63,7 @@ helm upgrade --install --namespace traefik traefik traefik/traefik --create-name
 Then, install the custom resource definitions (CRDs) for the Gateway API:
 
 ```shell
-kubectl apply --server-side --force-conflicts -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.1/experimental-install.yaml
+kubectl apply --server-side --force-conflicts -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.5.1/standard-install.yaml
 ```
 
 #### Enable network access to services
@@ -131,7 +131,8 @@ traefik   LoadBalancer   10.96.251.221   172.18.0.3    80:31415/TCP,443:31650/TC
 
 #### 2.1 Option 1: Use pre-built images
 
-There are pre-built images for all JAD apps available from [GHCR](https://github.com/Metaform/jad/packages) and the
+There are pre-built images for all JAD apps available from [GHCR](https://github.com/eclipse-dataspace-hub/jad/packages)
+and the
 Connector Fabric Manager images are available from
 the [CFM GitHub Repository](https://github.com/eclipse-cfm/cfm/packages). Those are tested and we
 strongly recommend using them.
@@ -155,16 +156,16 @@ and now want to see it in action, please follow the following steps to build and
 
   ```shell
   kind load docker-image \
-      ghcr.io/metaform/jad/controlplane:latest \
-      ghcr.io/metaform/jad/identity-hub:latest \
-      ghcr.io/metaform/jad/issuerservice:latest \
-      ghcr.io/metaform/jad/dataplane:latest -n edcv
+      ghcr.io/eclipse-dataspace-hub/jad/controlplane:latest \
+      ghcr.io/eclipse-dataspace-hub/jad/identity-hub:latest \
+      ghcr.io/eclipse-dataspace-hub/jad/issuerservice:latest \
+      ghcr.io/eclipse-dataspace-hub/jad/dataplane:latest -n edcv
   ```
 
   or if you're a bash God:
 
   ```shell
-  kind load docker-image -n edcv $(docker images --format "{{.Repository}}:{{.Tag}}" | grep '^ghcr.io/metaform/jad.*:latest')
+  kind load docker-image -n edcv $(docker images --format "{{.Repository}}:{{.Tag}}" | grep '^ghcr.io/eclipse-dataspace-hub/jad.*:latest')
   ```
 
 - build CFM docker images locally:
@@ -306,6 +307,11 @@ be put in place by running the REST requests in the `CFM - Provision Consumer` f
 in the [Bruno collection](./requests/EDC-V%20Onboarding). Be sure to select the `"KinD Local"` environment in
 Bruno.
 
+Since we switched to token exchange for authentication, the requests in the Bruno collection have been updated to use
+the `Authorization` with a fixed Bearer token. A token can be obtained by creating a service account token with
+`kubectl` and running the token exchange flow. The script `scripts/token.sh` does this
+automatically and print the access token. Run it and copy the token into the Bruno environment at collection level.
+
 ![bruno.png](docs/images/bruno.png)
 
 Those requests can be run manually, one after the other, or via Bruno's "Run" feature. It may be necessary to manually
@@ -425,20 +431,20 @@ unauthenticated at the gateway level.
 
 ### Application routes (`jad.localhost`)
 
-| Service             | Exposed path        | Rewrites to             | Backend port | Auth middleware                        |
-|---------------------|---------------------|-------------------------|--------------|----------------------------------------|
-| Control Plane       | `/api/management`   | `/api/mgmt`             | `8081`       | `jwt-auth-management-api`              |
-| Identity Hub        | `/api/identity`     | `/api/identity/v1alpha` | `7081`       | `jwt-auth-identity-api`                |
-| Issuer Service      | `/api/issuer/admin` | `/api/admin/v1alpha`    | `10013`      | `jwt-auth-issuer-admin-api`            |
-| Provision Manager   | `/api/pm`           | `/api/v1alpha`          | `8080`       | `jwt-auth-provision-manager-api`       |
-| Tenant Manager      | `/api/tm`           | `/api/v1alpha1`         | `8080`       | `jwt-auth-tenant-manager-api`          |
-| Dataplane (public)  | `/api/dp/public`    | `/`                     | `11002`      | —                                      |
-| Dataplane (control) | `/api/dp/control`   | `/`                     | `8083`       | —                                      |
-| Dataplane (certs)   | `/api/dp/certs`     | `/`                     | `8186`       | —                                      |
-| Siglet              | `/api/siglet`       | `/`                     | `8080`       | —                                      |
-| Redline             | `/redline`          | `/`                     | `8081`       | —                                      |
-| Keycloak            | `/auth`             | `/`                     | `8080`       | — (is the auth server)                 |
-| Web UI              | `/ui`               | `/`                     | `80`         | — (obtains its own token via Keycloak) |
+| Service             | Exposed path        | Rewrites to            | Backend port | Auth middleware                        |
+|---------------------|---------------------|------------------------|--------------|----------------------------------------|
+| Control Plane       | `/api/management`   | `/api/mgmt`            | `8081`       | `jwt-auth-management-api`              |
+| Identity Hub        | `/api/identity`     | `/api/identity/v1beta` | `7081`       | `jwt-auth-identity-api`                |
+| Issuer Service      | `/api/issuer/admin` | `/api/admin/v1beta`    | `10013`      | `jwt-auth-issuer-admin-api`            |
+| Provision Manager   | `/api/pm`           | `/api/v1beta`          | `8080`       | `jwt-auth-provision-manager-api`       |
+| Tenant Manager      | `/api/tm`           | `/api/v1alpha1`        | `8080`       | `jwt-auth-tenant-manager-api`          |
+| Dataplane (public)  | `/api/dp/public`    | `/`                    | `11002`      | —                                      |
+| Dataplane (control) | `/api/dp/control`   | `/`                    | `8083`       | —                                      |
+| Dataplane (certs)   | `/api/dp/certs`     | `/`                    | `8186`       | —                                      |
+| Siglet              | `/api/siglet`       | `/`                    | `8080`       | —                                      |
+| Redline             | `/redline`          | `/`                    | `8081`       | —                                      |
+| Keycloak            | `/auth`             | `/`                    | `8080`       | — (is the auth server)                 |
+| Web UI              | `/ui`               | `/`                    | `80`         | — (obtains its own token via Keycloak) |
 
 ### Auth middleware scopes
 
@@ -482,6 +488,16 @@ The proxy performs two checks:
 This design keeps authentication logic out of the individual services and centralizes it in one place, making it easy
 to add or modify access rules by updating the middleware definitions in
 [`k8s/base/jwt-middleware.yaml`](k8s/base/jwt-middleware.yaml).
+
+### Service-to-service authentication (jwtlet / token exchange)
+
+`clearglass` secures the **external** GlassAPI for human users. **In-cluster workloads** (the CFM
+agents, seed jobs, and your own apps) instead authenticate by exchanging their Kubernetes ServiceAccount token for a
+short-lived, scoped EDC token via **`jwtlet`** (RFC 8693). The EDC control plane, IdentityHub and IssuerService trust
+`jwtlet` as their OAuth2 issuer (`edc.iam.oauth2.issuer` / `jwks.url`).
+
+See [docs/token-exchange.md](docs/token-exchange.md) for the full picture: the exchange mechanism, the `jwtlet`
+APIs, the scope model, and a step-by-step guide for onboarding a new client application with its own service account.
 
 ## Advanced topics
 
@@ -614,21 +630,10 @@ spec:
 Do this for all `HTTPRoute` declarations in all components' manifests. The `hostnames` field should contain entries
 matching your DNS subdomains that you have also used to create the new Bruno environment.
 
-#### Update the Keycloak realm
-
-In `k8s/base/keycloak.yaml`, find the line that says:
-
-```text
-"bound_issuer": "http://vault.localhost/realms/edcv"
-```
-
-and replace with
-
-```text
-"bound_issuer": "http://vault.yourdomain.com/realms/edcv"
-```
-
-This is crucial for Vault authentication to work properly.
+> **Note:** Vault authentication no longer depends on Keycloak. The control plane authenticates to Vault via token
+> exchange (jwtlet), and Vault's JWT auth method is bound to jwtlet's in-cluster issuer
+> (`http://jwtlet.edc-v.svc.cluster.local:8080`), which does not change for remote deployments. See
+> [Service-to-service authentication](docs/token-exchange.md#6-vault-authentication-via-token-exchange).
 
 #### Tune readiness probes
 

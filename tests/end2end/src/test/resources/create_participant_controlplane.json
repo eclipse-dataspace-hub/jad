@@ -7,11 +7,6 @@
   "clientSecret": "{{tenant_clientSecret}}",
   "clientId": "{{tenant_clientId}}",
   "vaultConfig": {
-    "credentials": {
-      "clientId": "{{participant_context_id}}-vault",
-      "clientSecret": "{{participant_context_id}}-secret",
-      "tokenUrl": "http://keycloak.edc-v.svc.cluster.local:8080/realms/edcv/protocol/openid-connect/token"
-    },
     "config": {
       "secretPath": "v1/participants",
       "folderPath": "{{participant_context_id}}/identityhub",

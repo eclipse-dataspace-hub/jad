@@ -10,17 +10,16 @@
 # Contributors:
 #      Metaform Systems, Inc. - initial API and implementation
 #
-
-logs:
-  access:
-    enabled: true
-    format: json
-    fields:
-      general:
-        # full field list
-        # https://doc.traefik.io/traefik/reference/install-configuration/observability/logs-and-accesslogs/#json-format-fields
-        names:
-          RouterName: drop
+---
+accessLog:
+  enabled: true
+  format: json
+  fields:
+    general:
+      # full field list
+      # https://doc.traefik.io/traefik/reference/install-configuration/observability/logs-and-accesslogs/#json-format-fields
+      names:
+        RouterName: drop
 ports:
   web:
     port: 80
