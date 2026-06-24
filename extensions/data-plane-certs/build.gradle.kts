@@ -18,9 +18,7 @@ plugins {
 }
 
 dependencies {
-    api(libs.edc.spi.http)
-    api(libs.edc.spi.transaction)
-    api(libs.edc.spi.web)
+    api(libs.edc.spi.core)
     implementation(libs.edc.core.boot)
     implementation(libs.edc.core.runtime)
     implementation(libs.edc.core.token)

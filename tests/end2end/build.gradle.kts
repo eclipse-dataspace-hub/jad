@@ -18,7 +18,7 @@ plugins {
 
 dependencies {
     runtimeOnly(libs.jackson.databind)
-    testImplementation(libs.edc.spi.catalog)
+    testImplementation(libs.edc.spi.controlplane)
     testImplementation(libs.edc.ih.spi.credentials)
     testImplementation(libs.edc.ih.spi.participantcontext)
     testImplementation(libs.edc.junit)
