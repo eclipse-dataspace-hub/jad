@@ -27,7 +27,7 @@ dependencies {
     testImplementation(libs.awaitility)
     testImplementation(libs.restAssured)
     testImplementation(testFixtures(libs.edc.fixtures.mgmtapi))
-    testImplementation(testFixtures(libs.edc.lib.oauth2.authn))
+    testImplementation(testFixtures(libs.edc.lib.core))
 
 }
 
