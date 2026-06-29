@@ -119,8 +119,8 @@ spec:
                 --replicas 1 \
                 --retention interest \
                 --discard old \
-                --max-msgs -1 \
-                --max-bytes -1 \
+                --max-msgs=-1 \
+                --max-bytes=-1 \
                 --max-age 0 \
                 --dupe-window 2m \
                 --defaults 2>/dev/null \
