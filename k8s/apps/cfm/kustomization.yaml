@@ -13,6 +13,8 @@
 
 resources:
   - cfm-agents.yaml
+  - cfm-lifecycle-agents.yaml
+  - kmagent-config.yaml
   - edcv-agent-config.yaml
   - ih-agent-config.yaml
   - onboarding-agent-config.yaml

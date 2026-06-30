@@ -109,6 +109,9 @@ spec:
             - name: refresh
               containerPort: 8082
               protocol: TCP
+            - name: management
+              containerPort: 8083
+              protocol: TCP
           env:
             - name: RUST_LOG
               value: "info,siglet=debug"
@@ -184,6 +187,10 @@ spec:
     - name: refresh
       port: 8082
       targetPort: refresh
+      protocol: TCP
+    - name: management
+      port: 8083
+      targetPort: management
       protocol: TCP
   selector:
     app: siglet

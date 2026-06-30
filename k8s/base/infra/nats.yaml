@@ -115,14 +115,9 @@ spec:
               nats stream add edc-events \
                 --server "$NATS_URL" \
                 --subjects "events.>" \
-                --storage file \
-                --replicas 1 \
+                --storage memory \
                 --retention interest \
-                --discard old \
-                --max-msgs=-1 \
-                --max-bytes=-1 \
-                --max-age 0 \
-                --dupe-window 2m \
+                --allow-direct \
                 --defaults 2>/dev/null \
               && echo "Stream 'edc-events' created" \
               || echo "Stream 'edc-events' already exists, skipping"
