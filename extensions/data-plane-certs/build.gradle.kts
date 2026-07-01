@@ -18,9 +18,7 @@ plugins {
 }
 
 dependencies {
-    api(libs.edc.spi.http)
-    api(libs.edc.spi.transaction)
-    api(libs.edc.spi.web)
+    api(libs.edc.spi.core)
     implementation(libs.edc.core.boot)
     implementation(libs.edc.core.runtime)
     implementation(libs.edc.core.token)
@@ -28,11 +26,7 @@ dependencies {
     implementation(libs.edc.core.api)
     implementation(libs.edc.core.participantcontext.config)
     implementation(libs.jersey.multipart)
-    implementation(libs.edc.lib.util)
-    implementation(libs.edc.lib.sql)
-    implementation(libs.edc.lib.token)
-    implementation(libs.edc.lib.keys)
-    implementation(libs.edc.lib.oauth2.authn)
+    implementation(libs.edc.lib.core)
     implementation(libs.edc.core.sql.bootstrapper)
     implementation(libs.edc.core.sql)
     implementation(libs.edc.core.http)
@@ -43,7 +37,6 @@ dependencies {
     implementation(libs.jakarta.rsApi)
     implementation(libs.postgres)
 
-    testImplementation(libs.edc.lib.http)
     testImplementation(libs.edc.junit)
     testImplementation(libs.restAssured)
     testImplementation(testFixtures(libs.edc.core.jersey))

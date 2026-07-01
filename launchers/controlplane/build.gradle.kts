@@ -24,7 +24,7 @@ dependencies {
     runtimeOnly(libs.edcv.bom.controlplane.sql)
     runtimeOnly(libs.edcv.bom.controlplane.nats)
     runtimeOnly(libs.edcv.bom.controlplane.dcp)
-    runtimeOnly(libs.edc.spi.jwt)
+    runtimeOnly(libs.edc.spi.core)
     runtimeOnly(libs.edc.monitor.console)
     runtimeOnly(libs.edc.monitor.otel)
     runtimeOnly(libs.edc.events.nats)

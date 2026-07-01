@@ -205,7 +205,41 @@ spec:
                 echo "ERROR: Failed to create scope mapping entry (HTTP $RESP_STATUS): $RESP_BODY"
                 exit 1
               fi
-              echo "✓ 'CFM API write' scope mapping created"
+              echo "✓ 'CFM API read' scope mapping created"
+              
+               do_curl -X POST "${JWTLET_MGMT_URL}/scopes" \
+                -H "Authorization: Bearer $TOKEN" \
+                -H "Content-Type: application/json" \
+                -d '{
+                  "scope": "siglet-write",
+                  "claims": {
+                    "scope": "siglet-mgmt-api:write"
+                  }
+                }'
+              if [ "$RESP_STATUS" -eq 409 ]; then
+                echo "✓ 'siglet-write' scope mapping already exists"
+              elif [ "$RESP_STATUS" -ge 400 ]; then
+                echo "ERROR: Failed to create scope mapping entry (HTTP $RESP_STATUS): $RESP_BODY"
+                exit 1
+              fi
+              echo "✓ 'Siglet Mgmt API write' scope mapping created"
+              
+              do_curl -X POST "${JWTLET_MGMT_URL}/scopes" \
+                -H "Authorization: Bearer $TOKEN" \
+                -H "Content-Type: application/json" \
+                -d '{
+                  "scope": "siglet-read",
+                  "claims": {
+                    "scope": "siglet-mgmt-api:read"
+                  }
+                }'
+              if [ "$RESP_STATUS" -eq 409 ]; then
+                echo "✓ 'siglet-read' scope mapping already exists"
+              elif [ "$RESP_STATUS" -ge 400 ]; then
+                echo "ERROR: Failed to create scope mapping entry (HTTP $RESP_STATUS): $RESP_BODY"
+                exit 1
+              fi
+              echo "✓ 'Siglet Mgmt API read' scope mapping created"
               
               do_curl -X POST "${JWTLET_MGMT_URL}/scopes" \
                 -H "Authorization: Bearer $TOKEN" \
