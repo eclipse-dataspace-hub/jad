@@ -185,26 +185,12 @@ and now want to see it in action, please follow the following steps to build and
 
   Note that individual `make` targets for all CFM components exist, for example `make load-into-kind-pmanager`.
 
-- modify the deployment manifests of the components you want to load locally by setting the `imagePullPolicy: Never`
-  which forces KinD to rely on local images rather than pulling them. This can be done with search-and-replace from your
-  favorite editor, or you can do it from the command line by running
+- tell the cluster to prefer locally loaded images over pulling `:latest` from GHCR by installing the platform chart
+  with `--set global.imagePullPolicy=IfNotPresent` (see [Deploy the services](#3-deploy-the-services) below). With
+  `IfNotPresent`, KinD uses any image you have `kind load`-ed and pulls the rest normally, so you only need to load the
+  components you built locally.
 
-  ```shell
-  sed -i "s/imagePullPolicy:.*Always/imagePullPolicy: Never/g" <FILENAME>
-  ```
-
-  **CAUTION Mac users**: this requires GNU-sed. By default, macOS, has a special version of `sed` so you will have
-  to [install GNU sed first](https://medium.com/@bramblexu/install-gnu-sed-on-mac-os-and-set-it-as-default-7c17ef1b8f64)
-
-- For the EDC-V components, the relevant files are `controlplane.yaml`, `dataplane.yaml`, `identityhub.yaml` and
-  `issuerservice.yaml`
-- as a simplification, and to modify the image pull policy of both EDC-V _and_ CFM components, run:
-
-  ```shell
-  grep -rlZ "imagePullPolicy: Always" k8s/apps  | xargs sed -i "s/imagePullPolicy:.*Always/imagePullPolicy: Never/g"
-  ```
-
-  For this, both the EDC-V and CFM docker images must be built locally!!
+  For this, the docker images of the components you want to run locally must be built and loaded into KinD first.
 
 #### 2.3 Build and deploy clearglass
 
@@ -219,49 +205,42 @@ Clearglass is available in the CFM project: https://github.com/eclipse-cfm/clear
 
 ### 3. Deploy the services
 
-JAD uses plain Kubernetes manifests to deploy the services. All the manifests are located in the [k8s](./k8s) folder.
-While it is possible to just use the Kustomize plugin and running `kubectl apply -k k8s/`, you may experience nasty race
-conditions because some services depend on others to be fully operational before they can start properly.
+JAD is deployed with Helm in two layers (see the
+[decision record](https://github.com/eclipse-cfm/.github/blob/main/docs/developer/decision-records/2026-07-01-core_platform_distro/README.md)):
 
-The recommended way is to deploy infrastructure services first, and application services second. This can be done
-by running:
+1. the **Core Platform Distribution** — the generic, reusable platform (connector, identity hub, issuer service,
+   siglet, CFM agents/managers, jwtlet/clearglass, gateway, infrastructure and generic seeding). It is maintained in
+   the [eclipse-cfm](https://github.com/eclipse-cfm) project and consumed as-is.
+2. the **JAD dataspace profile** — the dataspace-specific seeding (issuer credential definitions and the dataspace
+   profile). It lives in this repo under [`charts/jad-dataspace-profile`](./charts/jad-dataspace-profile).
 
-```shell
-kubectl apply -k k8s/base/
-
-# Wait for the infrastructure services to be ready:
-kubectl wait --namespace edc-v \
-            --for=condition=ready pod \
-            --selector=type=edcv-infra \
-            --timeout=90s
-
-kubectl apply -k k8s/apps/
-
-# Wait for seed jobs to be ready:
-kubectl wait --namespace edc-v \
-            --for=condition=complete job --all \
-            --timeout=90s
-```
-
-Here's a copy-and-pasteable command to delete and redeploy everything:
+The Core Platform Distribution is consumed from an OCI registry (the published chart bundles its infrastructure
+sub-charts). Install the platform first and the dataspace profile second, into the same `edc-v` namespace:
 
 ```shell
-kubectl delete -k k8s/; \
-kubectl apply -k k8s/base && \
-kubectl wait --namespace edc-v \
-            --for=condition=ready pod \
-            --selector=type=edcv-infra \
-            --timeout=90s && \
-kubectl apply -k k8s/apps && \
-kubectl wait --namespace edc-v \
-            --for=condition=complete job --all \
-            --timeout=90s
+# 1) the generic platform (ordered install/upgrade hooks handle bootstrap + generic seeding)
+# Note: if you would like to install a certain version of the platform, specify the --version 0.0.1 parameter
+helm upgrade --install core-platform oci://ghcr.io/eclipse-cfm/charts/core-platform-distribution \
+  --namespace edc-v --create-namespace \
+  --wait --timeout 15m
+
+# 2) the JAD dataspace profile
+helm upgrade --install jad-dataspace charts/jad-dataspace-profile \
+  --namespace edc-v \
+  --wait --timeout 10m
 ```
 
-_Note: the `";"` after `kubectl delete -k k8s/` is on purpose for robustness, to allow the command to fail if no
-resources are deployed yet._
+> To develop against an unpublished platform chart, point the first command at a local checkout instead of the OCI
+> reference. In that case first resolve its sub-chart dependencies with `helm dependency build <path>` (after
+> `helm repo add`-ing the `hashicorp` and `nats` repos).
 
-This deploys all the services in the correct order. The services are deployed in the `edc-v` namespace. Please verify
+To tear everything down: `helm uninstall jad-dataspace core-platform -n edc-v`.
+
+> When running against a local KinD cluster with locally built images, add
+> `--set global.imagePullPolicy=IfNotPresent` to the platform install so the loaded images are used instead of being
+> pulled from GHCR. See [`run_e2e.sh`](./run_e2e.sh) for the full local end-to-end flow.
+
+Helm installs all the services in the correct order. The services are deployed in the `edc-v` namespace. Please verify
 that everything got deployed correctly by running `kubectl get deployments -n edc-v`. This should output something like:
 
 ```text
@@ -401,10 +380,10 @@ everything still works. Remember to rebuild and reload the docker images, though
 
 ## Cleanup
 
-To remove the deployment, run:
+To remove the deployment, uninstall both releases:
 
 ```shell
-kubectl delete -k k8s/
+helm uninstall jad-dataspace core-platform -n edc-v
 ```
 
 ## Troubleshooting
@@ -486,8 +465,8 @@ The proxy performs two checks:
    `401 Unauthorized` before it ever reaches the backend service.
 
 This design keeps authentication logic out of the individual services and centralizes it in one place, making it easy
-to add or modify access rules by updating the middleware definitions in
-[`k8s/base/jwt-middleware.yaml`](k8s/base/jwt-middleware.yaml).
+to add or modify access rules by updating the middleware definitions in the Core Platform Distribution chart
+(`templates/security/jwt-middlewares.yaml`).
 
 ### Service-to-service authentication (jwtlet / token exchange)
 
@@ -611,24 +590,20 @@ Create another environment to suit your setup:
 
 ![img.png](docs/images/bruno_custom_env.png)
 
-#### Update deployment manifests
+#### Update the gateway hostnames
 
-in [keycloak.yaml](k8s/base/keycloak.yaml) and [vault.yaml](k8s/base/vault.yaml), update the `hostnames` fields in the
-`HTTPRoute` resources to match your DNS:
+The `HTTPRoute` hostnames are Helm values rather than hardcoded manifest fields. The application routes share
+`global.host` (default `jad.localhost`) and each observability UI has its own `telemetry.<svc>.host`. Override them at
+install time to match your DNS, e.g.:
 
-```yaml
-spec:
-  parentRefs:
-    - name: edcv-gateway
-      kind: Gateway
-      sectionName: http
-  hostnames:
-    - keycloak.localhost
-    - auth.yourdomain.com
+```shell
+helm upgrade --install core-platform oci://ghcr.io/eclipse-cfm/charts/core-platform-distribution --version 0.1.0 \
+  --namespace edc-v --create-namespace \
+  --set global.host=jad.yourdomain.com \
+  --set telemetry.grafana.host=grafana.yourdomain.com
 ```
 
-Do this for all `HTTPRoute` declarations in all components' manifests. The `hostnames` field should contain entries
-matching your DNS subdomains that you have also used to create the new Bruno environment.
+Use the same subdomains you configured for the new Bruno environment.
 
 > **Note:** Vault authentication no longer depends on Keycloak. The control plane authenticates to Vault via token
 > exchange (jwtlet), and Vault's JWT auth method is bound to jwtlet's in-cluster issuer

@@ -11,33 +11,44 @@
 #      Metaform Systems, Inc. - initial API and implementation
 #
 
+## Dataspace-specific seeding: creates the Dataspace Profile (credential specs) in the
+## TenantManager and deploys it onto the platform-provisioned cell. Runs after
+## issuer-credentials-seed (it references the credential-definition IDs created there).
+
+{{- if .Values.seedJobs.dataspaceProfile.enabled }}
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: tenant-manager-seed
-  namespace: edc-v
+  name: dataspace-profile-seed
+  namespace: {{ include "cpd.namespace" . }}
   labels:
-    app: tenant-manager-seed
+    app: dataspace-profile-seed
     platform: edcv
     type: edcv-job
+    {{- include "cpd.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "20"
+    "helm.sh/hook-delete-policy": {{ .Values.seedJobs.hookDeletePolicy | quote }}
 spec:
   backoffLimit: 5
+  ttlSecondsAfterFinished: {{ .Values.seedJobs.ttlSecondsAfterFinished }}
   template:
     metadata:
       labels:
-        app: tenant-manager-seed
+        app: dataspace-profile-seed
         platform: edcv
         type: edcv-job
     spec:
-      serviceAccountName: seed-jobs
+      serviceAccountName: {{ .Values.seedJobs.serviceAccountName }}
       restartPolicy: OnFailure
       initContainers:
-        # Wait for tenant-manager to be ready
+        # Wait for tenant-manager to be ready (and for the platform cell to exist)
         - name: wait-for-tenant-manager
-          image: curlimages/curl:latest
+          image: {{ .Values.seedJobs.images.curl }}
           env:
             - name: JWTLET_TOKEN_URL
-              value: "http://jwtlet.edc-v.svc.cluster.local:8080/token"
+              value: "http://{{ include "cpd.fqdn" (dict "svc" "jwtlet" "ctx" $) }}:8080/token"
           volumeMounts:
             - name: jwtlet-subject-token
               mountPath: /var/run/secrets/jwtlet
@@ -51,23 +62,23 @@ spec:
                 -H "Content-Type: application/x-www-form-urlencoded" \
                 --data-urlencode "grant_type=urn:ietf:params:oauth:grant-type:token-exchange" \
                 --data-urlencode "subject_token=${SA_TOKEN}" \
-                --data-urlencode "resource=issuer" \
+                --data-urlencode "resource={{ .Values.issuer.participantContextId }}" \
                 --data-urlencode "scope=cfm-read" \
-                --data-urlencode "audience=edcv" \
+                --data-urlencode "audience={{ .Values.global.tokenExchangeAudience }}" \
                 | sed -n 's/.*"access_token":"\([^"]*\)".*/\1/p')
-              until curl -sf -H "Authorization: Bearer ${TOKEN}" http://tenant-manager.edc-v.svc.cluster.local:8080/api/v1alpha1/cells; do
+              until curl -sf -H "Authorization: Bearer ${TOKEN}" http://{{ include "cpd.fqdn" (dict "svc" "tenant-manager" "ctx" $) }}:8080/api/v1alpha1/cells; do
                 echo "Waiting for tenant-manager to be ready..."
                 sleep 5
               done
               echo "Tenant Manager is ready!"
       containers:
-        - name: seed-tenant-manager
-          image: curlimages/curl:latest
+        - name: seed-dataspace-profile
+          image: {{ .Values.seedJobs.images.curl }}
           env:
             - name: TM_BASE_URL
-              value: "http://tenant-manager.edc-v.svc.cluster.local:8080"
+              value: "http://{{ include "cpd.fqdn" (dict "svc" "tenant-manager" "ctx" $) }}:8080"
             - name: JWTLET_TOKEN_URL
-              value: "http://jwtlet.edc-v.svc.cluster.local:8080/token"
+              value: "http://{{ include "cpd.fqdn" (dict "svc" "jwtlet" "ctx" $) }}:8080/token"
           volumeMounts:
             - name: jwtlet-subject-token
               mountPath: /var/run/secrets/jwtlet
@@ -99,9 +110,9 @@ spec:
                 -H "Content-Type: application/x-www-form-urlencoded" \
                 --data-urlencode "grant_type=urn:ietf:params:oauth:grant-type:token-exchange" \
                 --data-urlencode "subject_token=${SA_TOKEN}" \
-                --data-urlencode "resource=issuer" \
-                --data-urlencode "scope=cfm-write" \
-                --data-urlencode "audience=edcv"
+                --data-urlencode "resource={{ .Values.issuer.participantContextId }}" \
+                --data-urlencode "scope=cfm-write cfm-read" \
+                --data-urlencode "audience={{ .Values.global.tokenExchangeAudience }}"
               if [ "$RESP_STATUS" -ge 400 ]; then
                 echo "ERROR: Failed to exchange SA token (HTTP $RESP_STATUS): $RESP_BODY"
                 exit 1
@@ -115,28 +126,26 @@ spec:
 
               echo ""
               echo "================================================"
-              echo "Step 2: TenantManager Seeding"
+              echo "Step 2: Discover platform cell"
               echo "================================================"
 
-              # Create Cell
-              echo "Creating Cell..."
-              do_curl -X POST "$TM_BASE_URL/api/v1alpha1/cells" \
-                -H "Authorization: Bearer ${EXCHANGED_TOKEN}" \
-                -H "Content-Type: application/json" \
-                -d '{
-                  "properties": {
-                    "newCellKey": "newCellValue"
-                  },
-                  "state": "active",
-                  "stateTimestamp": "'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"
-                }'
+              # The cell is created by the platform tenant-manager seed; discover it here.
+              do_curl -H "Authorization: Bearer ${EXCHANGED_TOKEN}" "$TM_BASE_URL/api/v1alpha1/cells"
               if [ "$RESP_STATUS" -ge 400 ]; then
-                echo "ERROR: Failed to create Cell (HTTP $RESP_STATUS): $RESP_BODY"
+                echo "ERROR: Failed to list cells (HTTP $RESP_STATUS): $RESP_BODY"
                 exit 1
               fi
-
               CELL_ID=$(printf '%s\n' "$RESP_BODY" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
-              echo "✓ Cell created with ID: $CELL_ID"
+              if [ -z "$CELL_ID" ]; then
+                echo "ERROR: no cell found. Is the platform tenant-manager seed applied?"
+                exit 1
+              fi
+              echo "✓ Using cell ID: $CELL_ID"
+
+              echo ""
+              echo "================================================"
+              echo "Step 3: Create and deploy Dataspace Profile"
+              echo "================================================"
 
               # Create Dataspace Profile
               echo "Creating Dataspace Profile..."
@@ -150,13 +159,13 @@ spec:
                      "protocolStack": ["dsp-2025-1", "dcp-2025-1"],
                      "credentialSpecs": [{
                         "type": "MembershipCredential",
-                        "issuer": "did:web:issuerservice.edc-v.svc.cluster.local%3A10016:issuer",
+                        "issuer": "{{ include "cpd.issuerDid" . }}",
                         "format": "vc20-bssl/jwt",
                         "id": "membership-credential-def"
                       },
                       {
                         "type": "ManufacturerCredential",
-                        "issuer": "did:web:issuerservice.edc-v.svc.cluster.local%3A10016:issuer",
+                        "issuer": "{{ include "cpd.issuerDid" . }}",
                         "format": "vc20-bssl/jwt",
                         "id": "manufacturer-credential-def",
                         "role": "manufacturer"
@@ -188,16 +197,8 @@ spec:
 
               echo "✓ Dataspace Profile deployed successfully"
               echo "================================================"
-              echo "TenantManager Seeding Complete"
+              echo "Dataspace Profile seeding complete"
               echo "================================================"
       volumes:
-        # RFC 8693 subject_token exchanged at jwtlet's /token endpoint for a
-        # cfm-scoped token. Audience must match jwtlet's `client_audience`.
-        - name: jwtlet-subject-token
-          projected:
-            sources:
-              - serviceAccountToken:
-                  path: token
-                  audience: https://kubernetes.default.svc.cluster.local
-                  expirationSeconds: 3600
-
+        {{- include "cpd.jwtletSubjectTokenVolume" . | nindent 8 }}
+{{- end }}
