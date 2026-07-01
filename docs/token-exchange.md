@@ -1,5 +1,10 @@
 # Service-to-service authentication: token exchange with jwtlet
 
+> **Note:** JAD now deploys via Helm rather than raw Kubernetes manifests. The manifests this document references have
+> moved into the **Core Platform Distribution** chart; paths shown below as `templates/…` are relative to that chart
+> (see the [decision record](https://github.com/eclipse-cfm/.github/blob/main/docs/developer/decision-records/2026-07-01-core_platform_distro/README.md)).
+> The dataspace-specific issuer credential seeding lives in this repo under `charts/jad-dataspace-profile/`.
+
 ## Introduction
 
 With recent development iterations, JAD has adopted the concept of workload identifiers over client-based
@@ -30,7 +35,7 @@ workload **exchange** its ServiceAccount identity for a narrowly-scoped, short-l
 `jwtlet` (`ghcr.io/eclipse-cfm/jwtlet`, a small Rust service from the [eclipse-cfm](https://github.com/eclipse-cfm)
 project) is the OAuth2 **issuer** that the EDC components trust. The control plane, IdentityHub, and IssuerService are
 all configured with jwtlet as their issuer and JWKS source — for example in
-[`k8s/apps/edc/controlplane-config.yaml`](../k8s/apps/edc/controlplane-config.yaml):
+`templates/edc/controlplane-config.yaml`:
 
 ```yaml
 edc.iam.oauth2.issuer: "http://jwtlet.edc-v.svc.cluster.local:8080"
@@ -67,7 +72,7 @@ sequenceDiagram
 ### The exchange request
 
 The canonical example lives in
-[`k8s/apps/edc/issuerservice-seed-job.yaml`](../k8s/apps/edc/issuerservice-seed-job.yaml):
+`templates/hooks/issuerservice-seed-job.yaml`:
 
 ```shell
 curl -X POST "http://jwtlet.edc-v.svc.cluster.local:8080/token" \
@@ -127,7 +132,7 @@ volumes:
 
 ## 3. The jwtlet application and its APIs
 
-`jwtlet` is deployed by [`k8s/base/security/jwtlet.yaml`](../k8s/base/security/jwtlet.yaml) and exposes **two ports**:
+`jwtlet` is deployed by `templates/security/jwtlet.yaml` and exposes **two ports**:
 
 | Port   | Name             | Purpose                                               |
 |--------|------------------|-------------------------------------------------------|
@@ -138,7 +143,7 @@ It uses a PostgreSQL backend for its state and a **Vault** agent sidecar that su
 `/vault/secrets/.vault-token` is produced by the agent and consumed by the jwtlet container). It validates incoming
 subject tokens through the Kubernetes **TokenReview** API; the required RBAC is granted by the
 `jwtlet-token-reviewer-binding` ClusterRoleBinding in
-[`k8s/base/security/jwtlet-service-accounts.yaml`](../k8s/base/security/jwtlet-service-accounts.yaml).
+`templates/security/serviceaccounts.yaml`.
 
 ### 3.1 Token-exchange API (port 8080)
 
@@ -161,13 +166,13 @@ scopes (see §4.1).
 | `POST /api/v1/scopes`   | define how an abstract scope tier expands into a concrete `scope` claim                                                  |
 
 > Read operations are gated by the `jwtlet:management:read` scope. The seed job
-> [`k8s/base/security/jwtlet-seed-job.yaml`](../k8s/base/security/jwtlet-seed-job.yaml) is the canonical example of
+> `templates/hooks/jwtlet-seed-job.yaml` is the canonical example of
 > driving this API.
 
 ### 3.3 Configuration (`jwtlet.toml`)
 
 Provided by the `jwtlet-config` ConfigMap in
-[`k8s/base/security/jwtlet-config.yaml`](../k8s/base/security/jwtlet-config.yaml):
+`templates/security/jwtlet-config.yaml`:
 
 ```toml
 # this defines the value of the `iss` claim in issued/exchanged tokens
@@ -388,7 +393,7 @@ partition it:
 2. exchanges it at jwtlet for a participant-scoped token (`resource = <participantContextId>` → `sub`, `audience = edcv`);
 3. presents that token to Vault's JWT auth method (`POST v1/auth/jwt/login`, role `participant`) to obtain a Vault token.
 
-Vault is configured to trust jwtlet in [`k8s/base/infra/vault.yaml`](../k8s/base/infra/vault.yaml):
+Vault is configured to trust jwtlet in `templates/hooks/vault-bootstrap-job.yaml`:
 
 ```shell
 vault write auth/jwt/config \
@@ -410,9 +415,9 @@ each participant to its own secrets and transit keys. Vault ignores the token's 
 
 > The control plane's **default** partition (its own secrets + transit signing key) still uses the static `root` token
 > (`edc.vault.hashicorp.token`). Token exchange is used only for **named** per-participant partitions. The relevant
-> control-plane settings live in [`k8s/apps/edc/controlplane-config.yaml`](../k8s/apps/edc/controlplane-config.yaml)
+> control-plane settings live in `templates/edc/controlplane-config.yaml`
 > (`edc.vault.hashicorp.auth.tokenexchange.*`, `edc.vault.hashicorp.auth.jwt.role`), and the projected subject-token
-> volume is mounted in [`k8s/apps/edc/controlplane.yaml`](../k8s/apps/edc/controlplane.yaml).
+> volume is mounted in `templates/edc/controlplane.yaml`.
 
 ### What onboarding (CFM) must do per participant
 

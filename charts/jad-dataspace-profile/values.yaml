@@ -1,0 +1,45 @@
+#
+# Copyright (c) 2025 Metaform Systems, Inc.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License, Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Contributors:
+#      Metaform Systems, Inc. - initial API and implementation
+#
+
+# These MUST match the core-platform-distribution release this dataspace targets:
+# the namespace, cluster domain and jwtlet audiences are used to reach the running
+# IssuerService / TenantManager / jwtlet services and to exchange tokens.
+global:
+  namespace: edc-v
+  clusterDomain: svc.cluster.local
+  # jwtlet participant-token audience (client_audience / bound_audiences).
+  tokenExchangeAudience: edcv
+  # RFC 8693 subject-token wiring (must match jwtlet's client_audience).
+  jwtSubjectTokenAudience: https://kubernetes.default.svc.cluster.local
+  jwtSubjectTokenExpirationSeconds: 3600
+
+seedJobs:
+  # ServiceAccount created by the platform chart; it has a jwtlet mapping to the
+  # "issuer" participant context with the write / cfm-write scopes these jobs need.
+  serviceAccountName: seed-jobs
+  # hook-succeeded removes finished jobs; before-hook-creation clears a prior run on
+  # upgrade; a failed job is kept for debugging (see the ttl backstop below).
+  hookDeletePolicy: before-hook-creation,hook-succeeded
+  ttlSecondsAfterFinished: 600
+  images:
+    curl: curlimages/curl:latest
+  # Toggle the two seeding phases independently.
+  issuerCredentials:
+    enabled: true
+  dataspaceProfile:
+    enabled: true
+
+# The issuer participant context these definitions are created under (matches the
+# tenant created by the platform issuerservice-seed).
+issuer:
+  participantContextId: issuer

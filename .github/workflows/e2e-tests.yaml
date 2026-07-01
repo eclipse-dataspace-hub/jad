@@ -80,46 +80,29 @@ jobs:
           
           sleep 5 # to be safe
 
-      - name: "Deploy JAD infrastructure"
-        run: |
-          # deploying the infrastructure first, wait for it to finish and deploying the applications afterwards is 
-          # the safest way to avoid race conditions between apps and infra, e.g. vault.
-          
-          kubectl apply -k k8s/base
-      - name: "Wait for JAD infrastructure to be ready"
+      - name: "Deploy Core Platform Distribution"
         run: |-
-          kubectl wait --namespace edc-v \
-            --for=condition=ready pod \
-            --selector=type=edcv-infra \
-            --timeout=300s
-          
-          # wait for all init jobs (vault, jwtlet)
-          kubectl wait --namespace edc-v \
-            --selector=type=edcv-job \
-            --for=condition=complete job --all \
-            --timeout=300s
-          
+          # The generic platform (connector, identity hub, issuer service, siglet, CFM,
+          # jwtlet/clearglass, gateway, infra + generic seeding), consumed from an OCI registry.
+          # The published chart bundles its sub-chart dependencies, so no dependency build here.
+          #
+          # IfNotPresent uses the KinD-loaded JAD images; everything else is pulled from GHCR.
+          helm upgrade --install core-platform oci://ghcr.io/eclipse-cfm/charts/core-platform-distribution \
+            --version 0.0.1 \
+            --namespace edc-v --create-namespace \
+            --set edc.controlplane.imagePullPolicy=Always \
+            --set edc.dataplane.imagePullPolicy=Always \
+            --set edc.identityhub.imagePullPolicy=Always \
+            --set edc.issuerservice.imagePullPolicy=Always \
+            --wait --timeout 15m
 
-
-      - name: "Deploy JAD applications"
+      - name: "Deploy JAD dataspace profile"
         run: |-
-          # this is crucial - without it, KinD would take the prebuilt images from GHCR
-          sed -i "s/imagePullPolicy:.*Always/imagePullPolicy: Never/g" k8s/apps/edc/controlplane.yaml
-          sed -i "s/imagePullPolicy:.*Always/imagePullPolicy: Never/g" k8s/apps/edc/dataplane.yaml
-          sed -i "s/imagePullPolicy:.*Always/imagePullPolicy: Never/g" k8s/apps/edc/issuerservice.yaml
-          sed -i "s/imagePullPolicy:.*Always/imagePullPolicy: Never/g" k8s/apps/edc/identityhub.yaml
-          
-          kubectl apply -k k8s/apps
+          # Dataspace-specific seeding: issuer credential definitions + dataspace profile.
+          helm upgrade --install jad-dataspace charts/jad-dataspace-profile \
+            --namespace edc-v \
+            --wait --timeout 10m
 
-      - name: "Wait for JAD applications to be ready"
-        run: |-
-          # wait until all init jobs are done
-          kubectl wait --namespace edc-v \
-            --selector=type=edcv-job \
-            --for=condition=complete job --all \
-            --timeout=600s
-          
-          
       - name: "Show pod status on timeout"
         if: failure()
         run: |-

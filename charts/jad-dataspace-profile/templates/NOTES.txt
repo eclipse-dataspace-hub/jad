@@ -1,0 +1,12 @@
+Dataspace profile "{{ .Chart.Name }}-{{ .Chart.Version }}" seeded into namespace {{ include "cpd.namespace" . }} (release "{{ .Release.Name }}").
+
+Prerequisite: the core-platform-distribution release must already be installed and
+healthy in this namespace (IssuerService + TenantManager running, the issuer tenant and
+a cell created, and the jwtlet `seed-jobs` mapping present).
+
+Seeding runs as post-install/post-upgrade hooks, in order:
+  1. issuer-credentials-seed  (weight 10) — Membership + Manufacturer attestation & credential definitions
+  2. dataspace-profile-seed   (weight 20) — Dataspace Profile + deployment onto the platform cell
+
+Watch:
+  kubectl -n {{ include "cpd.namespace" . }} get jobs -l platform=edcv -w
