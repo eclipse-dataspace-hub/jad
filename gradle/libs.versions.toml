@@ -11,7 +11,7 @@ jackson-annotations = "2.22"
 restAssured = "6.0.0"
 rsApi = "4.0.0"
 jersey = "4.0.2"
-swagger = "2.2.50"
+swagger = "2.2.52"
 opentelemetry = "2.29.0"
 postgres = "42.7.12"
 
