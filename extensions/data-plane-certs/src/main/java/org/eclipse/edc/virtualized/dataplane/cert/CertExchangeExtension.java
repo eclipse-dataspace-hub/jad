@@ -47,12 +47,18 @@ import static org.eclipse.edc.virtualized.dataplane.cert.CertExchangeExtension.N
 public class CertExchangeExtension implements ServiceExtension {
     public static final String NAME = "Cert Exchange Extension";
     public static final String API_CONTEXT = "certs";
+    public static final String API_CONTROL = "control";
+    static final int DEFAULT_CONTROL_PORT = 9191;
+    static final String DEFAULT_CONTROL_PATH = "/api/control";
     private static final int DEFAULT_CERTS_PORT = 8186;
     private static final String DEFAULT_CERTS_PATH = "/api/data";
     private static final long FIVE_MINUTES = 1000 * 60 * 5;
 
     @Configuration
     private CertApiConfiguration apiConfiguration;
+
+    @Configuration
+    private CertInternalApiConfiguration internalApiConfiguration;
 
     @Inject
     private Hostname hostname;
@@ -86,11 +92,14 @@ public class CertExchangeExtension implements ServiceExtension {
         var portMapping = new PortMapping(API_CONTEXT, apiConfiguration.port(), apiConfiguration.path());
         portMappingRegistry.register(portMapping);
 
+        var internal = new PortMapping(API_CONTROL, internalApiConfiguration.port(), internalApiConfiguration.path());
+        portMappingRegistry.register(internal);
+
         webService.registerResource(API_CONTEXT, new CertExchangePublicController(certStore, transactionContext));
         var resolver = JwksPublicKeyResolver.create(keyParserRegistry, sigletConfig.jwksUrl(), context.getMonitor(), sigletConfig.cacheValidityInMillis());
         webService.registerResource(API_CONTEXT, new JwtValidatorFilter(tokenValidationService, resolver, getRules()));
 
-        webService.registerResource("control", new CertInternalExchangeController(certStore, transactionContext));
+        webService.registerResource(API_CONTROL, new CertInternalExchangeController(certStore, transactionContext));
 
     }
 
@@ -108,6 +117,17 @@ public class CertExchangeExtension implements ServiceExtension {
             @Setting(key = "web.http." + API_CONTEXT + ".port", description = "Port for " + API_CONTEXT + " api context", defaultValue = DEFAULT_CERTS_PORT + "")
             int port,
             @Setting(key = "web.http." + API_CONTEXT + ".path", description = "Path for " + API_CONTEXT + " api context", defaultValue = DEFAULT_CERTS_PATH)
+            String path
+    ) {
+
+    }
+
+
+    @Settings
+    record CertInternalApiConfiguration(
+            @Setting(key = "web.http." + API_CONTROL + ".port", description = "Port for " + API_CONTROL + " api context", defaultValue = DEFAULT_CONTROL_PORT + "")
+            int port,
+            @Setting(key = "web.http." + API_CONTROL + ".path", description = "Path for " + API_CONTROL + " api context", defaultValue = DEFAULT_CONTROL_PATH)
             String path
     ) {
 

@@ -88,12 +88,12 @@ jobs:
           #
           # IfNotPresent uses the KinD-loaded JAD images; everything else is pulled from GHCR.
           helm upgrade --install core-platform oci://ghcr.io/eclipse-cfm/charts/core-platform-distribution \
-            --version 0.0.1 \
+            --version 0.0.2 \
             --namespace edc-v --create-namespace \
-            --set edc.controlplane.imagePullPolicy=Always \
-            --set edc.dataplane.imagePullPolicy=Always \
-            --set edc.identityhub.imagePullPolicy=Always \
-            --set edc.issuerservice.imagePullPolicy=Always \
+            --set edc.controlplane.imagePullPolicy=Never \
+            --set edc.dataplane.imagePullPolicy=Never \
+            --set edc.identityhub.imagePullPolicy=Never \
+            --set edc.issuerservice.imagePullPolicy=Never \
             --wait --timeout 15m
 
       - name: "Deploy JAD dataspace profile"
