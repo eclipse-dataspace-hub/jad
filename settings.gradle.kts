@@ -29,7 +29,5 @@ include(":extensions:data-plane-certs")
 include(":tests:end2end")
 
 // launcher modules
-include(":launchers:identity-hub")
-include(":launchers:controlplane")
 include(":launchers:dataplane")
 include(":launchers:issuerservice")

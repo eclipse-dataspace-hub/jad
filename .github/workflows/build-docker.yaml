@@ -32,15 +32,9 @@ jobs:
     strategy:
       matrix:
         include:
-          - name: controlplane
-            context: launchers/controlplane
-            dockerfile: launchers/controlplane/src/main/docker/Dockerfile
           - name: issuerservice
             context: launchers/issuerservice
             dockerfile: launchers/issuerservice/src/main/docker/Dockerfile
-          - name: identity-hub
-            context: launchers/identity-hub
-            dockerfile: launchers/identity-hub/src/main/docker/Dockerfile
           - name: dataplane
             context: launchers/dataplane
             dockerfile: launchers/dataplane/src/main/docker/Dockerfile

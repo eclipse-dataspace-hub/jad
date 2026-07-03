@@ -156,11 +156,13 @@ and now want to see it in action, please follow the following steps to build and
 
   ```shell
   kind load docker-image \
-      ghcr.io/eclipse-dataspace-hub/jad/controlplane:latest \
-      ghcr.io/eclipse-dataspace-hub/jad/identity-hub:latest \
       ghcr.io/eclipse-dataspace-hub/jad/issuerservice:latest \
       ghcr.io/eclipse-dataspace-hub/jad/dataplane:latest -n edcv
   ```
+
+  > Only the `issuerservice` and `dataplane` images are built from this repo. The control plane and IdentityHub are now
+  > provided by the [`platform-images`](https://github.com/eclipse-cfm/platform-images) project and pulled from GHCR by
+  > the Core Platform Distribution.
 
   or if you're a bash God:
 
@@ -211,8 +213,13 @@ JAD is deployed with Helm in two layers (see the
 1. the **Core Platform Distribution** — the generic, reusable platform (connector, identity hub, issuer service,
    siglet, CFM agents/managers, jwtlet/clearglass, gateway, infrastructure and generic seeding). It is maintained in
    the [eclipse-cfm](https://github.com/eclipse-cfm) project and consumed as-is.
-2. the **JAD dataspace profile** — the dataspace-specific seeding (issuer credential definitions and the dataspace
-   profile). It lives in this repo under [`charts/jad-dataspace-profile`](./charts/jad-dataspace-profile).
+2. the **JAD dataspace profile** — the dataspace-specific parts. It lives in this repo under
+   [`charts/jad-dataspace-profile`](./charts/jad-dataspace-profile) and covers both the seeding (issuer credential
+   definitions and the dataspace profile) and the **data plane**: a data plane is almost always specific to the data
+   space and/or the use case, so consequently, there is a JAD-specific one (it carries JAD's
+   certificate-exchange extensions). Its image is built from this repo (`ghcr.io/eclipse-dataspace-hub/jad/dataplane`,
+   see [`launchers/dataplane`](./launchers/dataplane)) and it is deployed directly by this chart, running in the same
+   namespace and connecting to the platform's postgres/vault/nats services.
 
 The Core Platform Distribution is consumed from an OCI registry (the published chart bundles its infrastructure
 sub-charts). Install the platform first and the dataspace profile second, into the same `edc-v` namespace:
@@ -220,8 +227,10 @@ sub-charts). Install the platform first and the dataspace profile second, into t
 ```shell
 # 1) the generic platform (ordered install/upgrade hooks handle bootstrap + generic seeding)
 # Note: if you would like to install a certain version of the platform, specify the --version 0.0.1 parameter
+# The -f override swaps the CPD chart's generic issuerservice for JAD's opinionated build (see note below).
 helm upgrade --install core-platform oci://ghcr.io/eclipse-cfm/charts/core-platform-distribution \
   --namespace edc-v --create-namespace \
+  -f platform-override-values.yaml \
   --wait --timeout 15m
 
 # 2) the JAD dataspace profile
@@ -229,6 +238,11 @@ helm upgrade --install jad-dataspace charts/jad-dataspace-profile \
   --namespace edc-v \
   --wait --timeout 10m
 ```
+
+> The Core Platform Distribution ships a generic, "unopinionated" IssuerService. JAD requires the opinionated build
+> that bundles its Membership/Manufacturer attestation sources, so
+> [`platform-override-values.yaml`](platform-override-values.yaml) overrides `edc.issuerservice.image` to point at
+> `ghcr.io/eclipse-dataspace-hub/jad/issuerservice`. Keep this `-f` override on every `core-platform` install/upgrade.
 
 > To develop against an unpublished platform chart, point the first command at a local checkout instead of the OCI
 > reference. In that case first resolve its sub-chart dependencies with `helm dependency build <path>` (after

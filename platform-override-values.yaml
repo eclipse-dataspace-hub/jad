@@ -1,0 +1,26 @@
+#
+# Copyright (c) 2025 Metaform Systems, Inc.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License, Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Contributors:
+#      Metaform Systems, Inc. - initial API and implementation
+#
+
+# JAD-specific override for the Core Platform Distribution (CPD) release.
+# Passed via `-f` to the `core-platform` helm install in run_e2e.sh.
+#
+# The CPD chart ships a generic, "unopinionated" issuerservice. JAD needs the
+# opinionated build that bundles its Membership/Manufacturer attestation sources,
+# so we point the issuerservice image at JAD's own image here.
+edc:
+  issuerservice:
+    image:
+      repo: eclipse-dataspace-hub/jad/issuerservice
+      tag: latest
+
+# add other overrides here, such as image tags, pull policies, etc.

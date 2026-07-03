@@ -1,0 +1,155 @@
+{{- if .Values.edc.dataplane.enabled }}
+{{- $c := .Values.edc.dataplane }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dataplane
+  namespace: {{ include "cpd.namespace" . }}
+  labels:
+    app: dataplane
+    type: edcv-app
+    {{- include "cpd.labels" . | nindent 4 }}
+spec:
+  replicas: {{ $c.replicas }}
+  selector:
+    matchLabels:
+      app: dataplane
+  template:
+    metadata:
+      labels:
+        app: dataplane
+        platform: edcv
+        type: edcv-app
+    spec:
+      containers:
+        - name: dataplane
+          image: {{ include "cpd.image" (dict "img" $c.image "ctx" $) }}
+          imagePullPolicy: {{ include "cpd.pullPolicy" (dict "policy" $c.imagePullPolicy "ctx" $) }}
+          envFrom:
+            {{- include "cpd.appEnvFrom" (dict "config" "dataplane-config" "ctx" $) | nindent 12 }}
+          env:
+            - name: OTEL_SERVICE_NAME
+              value: "edc.dataplane"
+          ports:
+            - containerPort: 11002
+              name: public-port
+            - containerPort: 1044
+              name: debug-port
+            - containerPort: 8083
+              name: control-port
+            - containerPort: 8186
+              name: certs-port
+            - containerPort: 8080
+              name: health-port
+          livenessProbe:
+            httpGet:
+              path: /api/check/liveness
+              port: 8080
+            failureThreshold: 10
+            periodSeconds: 5
+            timeoutSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /api/check/readiness
+              port: 8080
+            failureThreshold: 10
+            periodSeconds: 5
+            timeoutSeconds: 30
+          startupProbe:
+            httpGet:
+              path: /api/check/startup
+              port: 8080
+            failureThreshold: 10
+            periodSeconds: 5
+            timeoutSeconds: 30
+          {{- with $c.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dataplane
+  namespace: {{ include "cpd.namespace" . }}
+  labels:
+    {{- include "cpd.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    app: dataplane
+  ports:
+    - name: health
+      port: 8080
+      targetPort: 8080
+    - name: control
+      port: 8083
+      targetPort: 8083
+    - name: certs
+      port: 8186
+      targetPort: 8186
+    - name: public
+      port: 11002
+      targetPort: 11002
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: httproute-dataplane
+  namespace: {{ include "cpd.namespace" . }}
+  labels:
+    {{- include "cpd.labels" . | nindent 4 }}
+spec:
+  parentRefs:
+    - name: {{ .Values.global.gatewayName }}
+      namespace: {{ include "cpd.namespace" . }}
+  hostnames:
+    - {{ .Values.global.host }}
+  rules:
+    # /api/dp/public → public port 11002 (data transfer API)
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api/dp/public
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
+      backendRefs:
+        - name: dataplane
+          port: 11002
+          weight: 1
+    # /api/dp/control → control port 8083 (internal control API)
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api/dp/control
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
+      backendRefs:
+        - name: dataplane
+          port: 8083
+          weight: 1
+    # /api/dp/certs → certs port 8186 (data/certificate API)
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api/dp/certs
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
+      backendRefs:
+        - name: dataplane
+          port: 8186
+          weight: 1
+{{- end }}

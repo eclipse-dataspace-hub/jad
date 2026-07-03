@@ -57,9 +57,7 @@ jobs:
 
       - name: "Load runtime images into KinD"
         run: |-
-          kind load docker-image -n jad ghcr.io/eclipse-dataspace-hub/jad/controlplane:latest \
-                                ghcr.io/eclipse-dataspace-hub/jad/dataplane:latest \
-                                ghcr.io/eclipse-dataspace-hub/jad/identity-hub:latest \
+          kind load docker-image -n jad ghcr.io/eclipse-dataspace-hub/jad/dataplane:latest \
                                 ghcr.io/eclipse-dataspace-hub/jad/issuerservice:latest
 
 
@@ -88,12 +86,11 @@ jobs:
           #
           # IfNotPresent uses the KinD-loaded JAD images; everything else is pulled from GHCR.
           helm upgrade --install core-platform oci://ghcr.io/eclipse-cfm/charts/core-platform-distribution \
-            --version 0.0.1 \
+            --version 0.0.3 \
             --namespace edc-v --create-namespace \
-            --set edc.controlplane.imagePullPolicy=Always \
-            --set edc.dataplane.imagePullPolicy=Always \
-            --set edc.identityhub.imagePullPolicy=Always \
-            --set edc.issuerservice.imagePullPolicy=Always \
+            -f platform-override-values.yaml \
+            --set edc.dataplane.imagePullPolicy=Never \
+            --set edc.issuerservice.imagePullPolicy=Never \
             --wait --timeout 15m
 
       - name: "Deploy JAD dataspace profile"
