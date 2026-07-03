@@ -1,5 +1,5 @@
 {{/*
-Copyright (c) 2025 Metaform Systems, Inc.
+Copyright (c) 2026 Metaform Systems, Inc.
 SPDX-License-Identifier: Apache-2.0
 
 Helper names/signatures mirror the core-platform-distribution chart so the seeding
