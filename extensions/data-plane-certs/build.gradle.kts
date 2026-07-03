@@ -32,7 +32,6 @@ dependencies {
     implementation(libs.edc.core.http)
     implementation(libs.edc.transaction.local)
     implementation(libs.edc.transaction.pool)
-    implementation(libs.edc.api.control.configuration)
     implementation(libs.edc.api.observability)
     implementation(libs.jakarta.rsApi)
     implementation(libs.postgres)
