@@ -74,6 +74,8 @@ vault:
 
 nats:
   connection:
+    # The platform runs NATS as a release-prefixed in-chart manifest (restored from the
+    # original raw manifest); the Service is named "<release>-nats" — here "core-platform".
     host: core-platform-nats.edc-v.svc.cluster.local
     port: 4222
 
