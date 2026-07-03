@@ -89,7 +89,6 @@ jobs:
             --version 0.0.4 \
             --namespace edc-v --create-namespace \
             -f platform-override-values.yaml \
-            --set edc.dataplane.imagePullPolicy=Never \
             --set edc.issuerservice.imagePullPolicy=Never \
             --wait --timeout 15m
 
@@ -98,6 +97,7 @@ jobs:
           # Dataspace-specific seeding: issuer credential definitions + dataspace profile.
           helm upgrade --install jad-dataspace charts/jad-dataspace-profile \
             --namespace edc-v \
+            --set edc.dataplane.imagePullPolicy=Never \
             --wait --timeout 10m
 
       - name: "Show pod status on timeout"
