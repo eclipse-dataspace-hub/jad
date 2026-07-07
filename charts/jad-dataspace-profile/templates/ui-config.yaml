@@ -1,0 +1,86 @@
+#
+# Copyright (c) 2026 Metaform Systems, Inc.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License, Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Contributors:
+#      Metaform Systems, Inc. - initial API and implementation
+#
+
+
+{{- if .Values.ui.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jad-web-ui-config
+  namespace: {{ include "cpd.namespace" . }}
+  labels:
+    app: jad-web-ui
+    {{- include "cpd.labels" . | nindent 4 }}
+data:
+  config.json: |
+    {
+      "production": true,
+      "apiUrl": "http://{{ .Values.global.host }}/redline/api/ui",
+      "appName": {{ .Values.ui.config.appName | quote }},
+      "version": "1.0.0",
+      "features": {
+        "enableMockData": false,
+        "enableAnalytics": true,
+        "enableDebugMode": false,
+        "enableDevMode": true
+      },
+      "auth": {
+        "roles": {
+          "admin": "EDC_ADMIN",
+          "participant": "EDC_USER_PARTICIPANT",
+          "validRoles": ["EDC_ADMIN", "EDC_USER_PARTICIPANT"]
+        },
+        "enableAuth": false,
+        "tokenKey": "auth_token"
+      },
+      "participantIdentifierPrefix": "did:web:{{ include "cpd.fqdn" (dict "svc" "identityhub" "ctx" $) }}%3A7083:"
+    }
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jad-web-nginx-config
+  namespace: {{ include "cpd.namespace" . }}
+  labels:
+    app: jad-web-ui
+    {{- include "cpd.labels" . | nindent 4 }}
+data:
+  default.conf: |
+    server {
+      listen 80;
+      server_name _;
+      root /usr/share/nginx/html;
+      index index.html;
+      gzip on;
+      gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
+      # Root redirect
+      location = / {
+          return 301 /customers/;
+      }
+      location /customers/ {
+          root /usr/share/nginx/html;
+          index index.html;
+          try_files $uri $uri/ /customers/index.html;
+          add_header X-Frame-Options "SAMEORIGIN" always;
+          add_header X-Content-Type-Options "nosniff" always;
+          add_header X-XSS-Protection "1; mode=block" always;
+      }
+      # Cache per assets statici
+      location ~* \.(jpg|jpeg|png|gif|ico|css|js)$ {
+          expires 1y;
+          add_header Cache-Control "public, max-age=31536000";
+      }
+    }
+{{- end }}

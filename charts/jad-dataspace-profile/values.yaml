@@ -54,6 +54,27 @@ edc:
     resources: {}
 
 # =============================================================================
+# JAD web UI (participant portal). Static assets served by nginx behind the
+# platform gateway under /ui. JAD-specific, so it ships in this chart rather
+# than the platform. Restored from the pre-Helm kustomize manifests
+# (k8s/apps/ui/ui.yaml + ui-config.yaml).
+# =============================================================================
+ui:
+  enabled: true
+  image:
+    repo: ghcr.io/aruba-it-s-p-a/edc-public-participant-portal
+    tag: demo-madrid
+  replicas: 1
+  # imagePullPolicy overrides global.imagePullPolicy for this component (empty = use global)
+  imagePullPolicy: ""
+  resources: {}
+  # Identity API endpoint injected into the container environment (HOST_API).
+  hostApi: https://identity.aruba.io
+  # Values rendered into the config.json served to the browser.
+  config:
+    appName: "JAD's DataSpace"
+
+# =============================================================================
 # Redline UI (dataspace management client). JAD-specific, so it ships in this
 # chart rather than the platform. The platform chart provides its ServiceAccount
 # ("redline") and the jwtlet mapping to the "redline" participant context; its
