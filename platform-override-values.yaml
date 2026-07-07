@@ -23,4 +23,20 @@ edc:
       repo: eclipse-dataspace-hub/jad/issuerservice
       tag: latest
 
+# Redline (jad-dataspace-profile chart) needs its "redlinedb" database provisioned by
+# the platform's postgres-init hook. Helm replaces lists wholesale, so the platform's
+# default databases must be repeated here alongside the JAD-specific entry.
+postgresql:
+  databases:
+    - { db: controlplane,  user: cp,      password: cp }
+    - { db: identityhub,   user: ih,      password: ih }
+    - { db: issuerservice, user: issuer,  password: issuer }
+    - { db: dataplane,     user: dp,      password: dp }
+    - { db: cfm,           user: cfm,     password: cfm }
+    - { db: sigletdb,      user: siglet,  password: siglet }
+    - { db: jwtlet,        user: jwtlet,  password: jwtlet }
+    # JAD-only: Redline UI database
+    - { db: redlinedb,     user: redline, password: redline }
+
+
 # add other overrides here, such as image tags, pull policies, etc.

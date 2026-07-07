@@ -1,0 +1,45 @@
+#
+  # Copyright (c) 2026 Metaform Systems, Inc.
+  #
+  # This program and the accompanying materials are made available under the
+  # terms of the Apache License, Version 2.0 which is available at
+  # https://www.apache.org/licenses/LICENSE-2.0
+  #
+  # SPDX-License-Identifier: Apache-2.0
+  #
+  # Contributors:
+  #      Metaform Systems, Inc. - initial API and implementation
+  #
+
+
+{{- if .Values.redline.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redline-config
+  namespace: {{ include "cpd.namespace" . }}
+  labels:
+    app: redline
+    {{- include "cpd.labels" . | nindent 4 }}
+data:
+  SPRING_PROFILES_ACTIVE: "dev-pg"
+  # The redlinedb database is JAD-specific: it is added to the platform's
+  # postgresql.databases list via platform-override-values.yaml.
+  DATABASE_URL: {{ printf "jdbc:postgresql://%s:%v/redlinedb" (include "cpd.pgHost" .) .Values.postgresql.connection.port | quote }}
+  DATABASE_USERNAME: "redline"
+  DATABASE_PASSWORD: "redline"
+
+  # urls for external services (platform release + the JAD dataplane in this chart)
+  CONTROLPLANE_URL: {{ printf "http://%s:8081/api/mgmt" (include "cpd.fqdn" (dict "svc" "controlplane" "ctx" $)) | quote }}
+  DATAPLANE_URL: {{ printf "http://%s:8186/api/data" (include "cpd.fqdn" (dict "svc" "dataplane" "ctx" $)) | quote }}
+  DATAPLANE_INTERNAL_URL: {{ printf "http://%s:8083/api/control" (include "cpd.fqdn" (dict "svc" "dataplane" "ctx" $)) | quote }}
+  VAULT_URL: {{ include "cpd.vaultUrl" . | quote }}
+  IDENTITYHUB_URL: {{ printf "http://%s:7081/identities" (include "cpd.fqdn" (dict "svc" "identityhub" "ctx" $)) | quote }}
+  TENANT-MANAGER_URL: {{ printf "http://%s:8080" (include "cpd.fqdn" (dict "svc" "tenant-manager" "ctx" $)) | quote }}
+  SIGLET_URL: {{ printf "http://%s:8080" (include "cpd.fqdn" (dict "svc" "siglet" "ctx" $)) | quote }}
+  CORS_ALLOWED_ORIGIN: {{ printf "http://%s" .Values.global.host | quote }}
+  TOKEN_EXCHANGE_URL: {{ printf "http://%s:8080" (include "cpd.fqdn" (dict "svc" "jwtlet" "ctx" $)) | quote }}
+  TOKEN_EXCHANGE_FILE_PATH: "/var/run/secrets/jwtlet/token"
+  TOKEN_EXCHANGE_AUDIENCE: {{ .Values.global.tokenExchangeAudience | quote }}
+{{- end }}

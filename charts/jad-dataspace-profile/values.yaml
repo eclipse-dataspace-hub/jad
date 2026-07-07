@@ -54,6 +54,31 @@ edc:
     resources: {}
 
 # =============================================================================
+# Redline UI (dataspace management client). JAD-specific, so it ships in this
+# chart rather than the platform. The platform chart provides its ServiceAccount
+# ("redline") and the jwtlet mapping to the "redline" participant context; its
+# "redlinedb" database is added to the platform's postgresql.databases list via
+# platform-override-values.yaml.
+# =============================================================================
+redline:
+  enabled: true
+  image:
+    repo: metaform/redline
+    tag: latest
+  replicas: 1
+  # imagePullPolicy overrides global.imagePullPolicy for this component (empty = use global)
+  imagePullPolicy: ""
+  # ServiceAccount created by the platform chart (jwtlet-mapped to "redline").
+  serviceAccountName: redline
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "500m"
+    limits:
+      memory: "1Gi"
+      cpu: "1000m"
+
+# =============================================================================
 # Platform infrastructure endpoints. This chart is a SEPARATE Helm release from
 # the platform, so these hosts MUST be set explicitly — they cannot be derived
 # from this release's name. They point at the platform release's community
@@ -94,11 +119,19 @@ seedJobs:
   ttlSecondsAfterFinished: 600
   images:
     curl: curlimages/curl:latest
-  # Toggle the two seeding phases independently.
+    # The redline seed script needs jq to parse responses.
+    curlJq: badouralix/curl-jq
+  # Toggle the seeding phases independently.
   issuerCredentials:
     enabled: true
   dataspaceProfile:
     enabled: true
+  # Demo Service Provider / Dataspace / Consumer+Provider tenants in Redline.
+  redline:
+    enabled: true
+    # Participant names appended to the identityhub did:web DIDs.
+    consumerName: demo-consumer
+    providerName: demo-provider
 
 # The issuer participant context these definitions are created under (matches the
 # tenant created by the platform issuerservice-seed).
