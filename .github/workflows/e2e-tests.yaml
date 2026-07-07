@@ -90,7 +90,7 @@ jobs:
             --namespace edc-v --create-namespace \
             -f platform-override-values.yaml \
             --set edc.issuerservice.imagePullPolicy=Never \
-            --wait --timeout 15m
+            --wait --timeout 30m
 
       - name: "Deploy JAD dataspace profile"
         run: |-
@@ -98,7 +98,7 @@ jobs:
           helm upgrade --install jad-dataspace charts/jad-dataspace-profile \
             --namespace edc-v \
             --set edc.dataplane.imagePullPolicy=Never \
-            --wait --timeout 10m
+            --wait --timeout 15m
 
       - name: "Show pod status on timeout"
         if: failure()
