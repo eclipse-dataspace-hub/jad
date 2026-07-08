@@ -90,7 +90,7 @@ jobs:
             --namespace edc-v --create-namespace \
             -f platform-override-values.yaml \
             --set edc.issuerservice.imagePullPolicy=Never \
-            --wait --timeout 30m
+            --wait --timeout 15m
 
       - name: "Deploy JAD dataspace profile"
         run: |-
@@ -98,7 +98,7 @@ jobs:
           helm upgrade --install jad-dataspace charts/jad-dataspace-profile \
             --namespace edc-v \
             --set edc.dataplane.imagePullPolicy=Never \
-            --wait --timeout 15m
+            --wait --timeout 10m
 
       - name: "Show pod status on timeout"
         if: failure()
@@ -108,6 +108,14 @@ jobs:
           echo ""
           echo "Detailed pod descriptions:"
           kubectl describe pods -n edc-v
+          echo ""
+          echo "Logs of unready pods:"
+          for pod in $(kubectl get pods -n edc-v --no-headers | awk '$2 !~ /^([0-9]+)\/\1$/ && $3 != "Completed" {print $1}'); do
+            echo "--- logs: $pod ---"
+            kubectl logs -n edc-v "$pod" --all-containers --tail=200 || true
+            echo "--- previous logs: $pod ---"
+            kubectl logs -n edc-v "$pod" --all-containers --tail=200 --previous || true
+          done
 
       - name: "Run E2E Test"
         run: |
