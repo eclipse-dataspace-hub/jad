@@ -29,7 +29,7 @@ dependencies {
     runtimeOnly(libs.edc.core.participantcontext.config)
     // provides ParticipantProfileService, hard-required by connector-core's
     // DiscoveryDefaultServicesExtension (EDC 5b337cbe) but not part of the issuerservice BOMs
-    runtimeOnly(libs.edc.core.participantcontext)
+    runtimeOnly(libs.edc.core.connector.participantcontext)
     runtimeOnly(libs.edc.store.participantcontext.config.sql)
     runtimeOnly(libs.edc.monitor.console)
     runtimeOnly(libs.edc.monitor.otel)
