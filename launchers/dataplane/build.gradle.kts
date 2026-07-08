@@ -21,7 +21,7 @@ plugins {
 dependencies {
     runtimeOnly(libs.tink)
     runtimeOnly(project(":extensions:data-plane-certs"))
-
+    runtimeOnly(libs.edc.core.participantcontext)
     runtimeOnly(libs.edc.vault.hashicorp)
     runtimeOnly(libs.edc.monitor.console)
     runtimeOnly(libs.edc.monitor.otel)
