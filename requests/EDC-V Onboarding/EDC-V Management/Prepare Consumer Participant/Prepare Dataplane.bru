@@ -12,9 +12,9 @@ put {
 
 body:json {
   {
-    "id": "consumer-siglet",
+    "dataplaneId": "consumer-siglet",
     "transferTypes": [
-      "HttpData-PULL"
+      "https://w3id.org/dspace-sig/profile/http-pull"
     ],
     "endpoint": "http://siglet.edc-v.svc.cluster.local:8081/api/v1/{{consumer_id}}/dataflows"
   }

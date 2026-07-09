@@ -120,7 +120,7 @@ public class KeyRotationEndToEndTest {
 
         // seed provider
         MONITOR.info("Seeding provider");
-        TOKEN_PROVIDER.registerTokenGenerator(participantCredentials.participantContextId(), () ->  participantCredentials.participantToken());
+        TOKEN_PROVIDER.registerTokenGenerator(participantCredentials.participantContextId(), () -> participantCredentials.participantToken());
 
         // Register dataplane
         registerDataPlane(participantCredentials.participantContextId());
@@ -212,7 +212,7 @@ public class KeyRotationEndToEndTest {
         MANAGEMENT_API_CLIENT.dataplanes().registerDataPlane(participantContextId, new DataPlaneRegistrationDto(
                 "dataplane-%s".formatted(participantContextId),
                 "http://siglet.edc-v.svc.cluster.local:8081/api/v1/%s/dataflows".formatted(participantContextId),
-                Set.of("HttpData-PULL"),
+                Set.of("https://w3id.org/dspace-sig/profile/http-pull"),
                 Set.of(),
                 null
         ));

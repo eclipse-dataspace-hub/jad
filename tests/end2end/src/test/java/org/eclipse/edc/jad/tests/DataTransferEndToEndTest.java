@@ -167,7 +167,7 @@ public class DataTransferEndToEndTest {
         MONITOR.info("starting data transfer");
 
         var transferId = MANAGEMENT_API_CLIENT.startTransfer(consumerCredentials.participantContextId(), "http-dsp-profile-2025-1",
-                providerCredentials.participantContextId(), CONTROLPLANE_PROTOCOL_URL.formatted(providerCredentials.participantContextId()), providerContextId, assetId, "HttpData-PULL");
+                providerCredentials.participantContextId(), CONTROLPLANE_PROTOCOL_URL.formatted(providerCredentials.participantContextId()), providerContextId, assetId, "https://w3id.org/dspace-sig/profile/http-pull");
 
 
         MONITOR.info("Fetching siglet token for transferId: " + transferId);
@@ -222,7 +222,7 @@ public class DataTransferEndToEndTest {
         MONITOR.info("starting data transfer");
 
         var transferId = MANAGEMENT_API_CLIENT.startTransfer(manufacturerCredentials.participantContextId(), "http-dsp-profile-2025-1",
-                providerCredentials.participantContextId(), CONTROLPLANE_PROTOCOL_URL.formatted(providerCredentials.participantContextId()), providerContextId, assetId, "HttpData-PULL");
+                providerCredentials.participantContextId(), CONTROLPLANE_PROTOCOL_URL.formatted(providerCredentials.participantContextId()), providerContextId, assetId, "https://w3id.org/dspace-sig/profile/http-pull");
 
 
         MONITOR.info("Fetching siglet token for transferId: " + transferId);
@@ -260,7 +260,7 @@ public class DataTransferEndToEndTest {
         MANAGEMENT_API_CLIENT.dataplanes().registerDataPlane(participantContextId, new DataPlaneRegistrationDto(
                 "dataplane-%s".formatted(participantContextId),
                 "http://siglet.edc-v.svc.cluster.local:8081/api/v1/%s/dataflows".formatted(participantContextId),
-                Set.of("HttpData-PULL"),
+                Set.of("https://w3id.org/dspace-sig/profile/http-pull"),
                 Set.of(),
                 null
         ));
