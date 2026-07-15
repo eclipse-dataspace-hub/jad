@@ -18,6 +18,15 @@ plugins {
     alias(libs.plugins.shadow)
 }
 
+configurations.all {
+    // jnats drags in the BouncyCastle LTS provider (bcprov-lts8on), which (a) ships
+    // glibc-linked JNI natives that crash on the musl-based alpine images
+    // (UnsatisfiedLinkError in org.bouncycastle.crypto.NativeLoader) and (b) duplicates
+    // the org.bouncycastle.* classes already provided by bcprov-jdk18on in the shadow
+    // jar. jnats' ed25519/NKey code works against plain bcprov, which stays on the
+    // classpath via the EDC dependencies.
+    exclude(group = "org.bouncycastle", module = "bcprov-lts8on")
+}
 
 dependencies {
     implementation(libs.edc.issuance.spi) // for seeding the attestations
@@ -32,7 +41,7 @@ dependencies {
     runtimeOnly(libs.edc.monitor.otel)
     runtimeOnly(libs.edc.events.nats)
     runtimeOnly(libs.edc.vault.transit)
-
+    runtimeOnly(libs.edc.nats.auth.nkey)
     runtimeOnly(libs.opentelemetry.exporter.otlp)
 }
 

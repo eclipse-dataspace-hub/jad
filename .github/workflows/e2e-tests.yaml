@@ -86,7 +86,7 @@ jobs:
           #
           # IfNotPresent uses the KinD-loaded JAD images; everything else is pulled from GHCR.
           helm upgrade --install core-platform oci://ghcr.io/eclipse-cfm/charts/core-platform-distribution \
-            --version 0.0.7 \
+            --version 0.0.9 \
             --namespace edc-v --create-namespace \
             -f platform-override-values.yaml \
             --set edc.issuerservice.imagePullPolicy=Never \
