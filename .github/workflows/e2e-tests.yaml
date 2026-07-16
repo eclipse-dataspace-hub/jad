@@ -54,6 +54,10 @@ jobs:
         uses: helm/kind-action@v1.14.0
         with:
           cluster_name: jad
+          # maps host ports 80/443 into the node container; together with the Traefik
+          # hostPort settings in values.yaml this exposes the gateway on localhost
+          # without a port-forward
+          config: kind-config.yaml
 
       - name: "Load runtime images into KinD"
         run: |-
@@ -68,10 +72,7 @@ jobs:
           
           # Wait for traefik to be ready
           kubectl rollout status deployment/traefik -n traefik --timeout=120s
-          
-          # forward port 80 -> 8080
-          kubectl -n traefik port-forward svc/traefik 8080:80 &
-          
+
           # install Gateway API CRDs
           kubectl apply --server-side --force-conflicts -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.5.1/standard-install.yaml
           

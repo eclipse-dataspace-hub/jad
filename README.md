@@ -46,9 +46,14 @@ To create a KinD cluster, run:
 
 ```shell
 cp ~/.kube/config ~/.kube/config.bak # to save your existing kubeconfig
-kind create cluster -n edcv --kubeconfig ~/.kube/edcv-kind.conf
+kind create cluster -n edcv --config kind-config.yaml --kubeconfig ~/.kube/edcv-kind.conf
 ln -sf ~/.kube/edcv-kind.conf ~/.kube/config # to use KinD's kubeconfig
 ```
+
+> [`kind-config.yaml`](kind-config.yaml) maps host ports 80/443 into the node container. Together with the
+> `hostPort` settings in the Traefik values this makes the gateway reachable on `http://localhost` without any
+> port-forwarding (see [Enable network access to services](#enable-network-access-to-services)). Port mappings are
+> fixed at cluster creation — if you created the cluster without this config, recreate it.
 
 Next, we need to deploy a Gateway controller to allow access to services from outside the cluster. There are several
 popular choices, and we've opted for [Traefik](https://doc.traefik.io/traefik/setup/kubernetes/) in this case. We could
@@ -70,8 +75,12 @@ kubectl apply --server-side --force-conflicts -f https://github.com/kubernetes-s
 
 With the Gateway API, there are three main ways to access services from outside the cluster:
 
+- via `hostPort` + KinD port mappings: Traefik binds ports 80/443 directly on the (single) KinD node, and
+  [`kind-config.yaml`](kind-config.yaml) maps those node ports onto the host. This is KinD-specific but requires no
+  manual steps and no extra tooling. We use this approach here.
+
 - using port-forwarding: this is a manual way to forward ports from the host to the cluster. This is not
-  recommended for production use but works fine for local testing. We will use this approach here for simplicity.
+  recommended for production use but works fine for local testing.
 
 - via a LoadBalancer service: this is typically used in cloud-hosted Kubernetes clusters, where the cloud provider
   provisions a load balancer automatically. This is the recommended approach for production use when running in
@@ -82,9 +91,18 @@ With the Gateway API, there are three main ways to access services from outside 
   recommended for production use, and it gets complicated quickly when multiple services are involved, as is the case
   here. _This is not shown here_.
 
-##### Option 1 (recommended): via port-forwarding
+##### Option 1 (recommended): via hostPort + KinD port mappings
 
-To set up port-forwarding, run the following command:
+Nothing to do: if the cluster was created with `--config kind-config.yaml` (see above), the gateway is reachable on
+`http://localhost` as soon as the Traefik chart is installed — the Traefik values in [`values.yaml`](values.yaml) set
+`ports.web.hostPort: 80` and `ports.websecure.hostPort: 443`.
+
+> This relies on the cluster having a single node, so the Traefik pod is guaranteed to run on the node whose ports
+> are mapped to the host.
+
+##### Option 2: via port-forwarding (alternative)
+
+If the cluster was created without the port mappings, forward the ports manually:
 
 ```shell
 kubectl -n traefik port-forward svc/traefik 80
@@ -93,7 +111,7 @@ kubectl -n traefik port-forward svc/traefik 80
 This forwards port 80 from the host to the Traefik service inside the cluster. You may need to run this with `sudo`
 privileges on some systems.
 
-##### Option 2: via LoadBalancer (alternative)
+##### Option 3: via LoadBalancer (alternative)
 
 The KinD project provides
 a [cloud-like load balancer implementation](https://github.com/kubernetes-sigs/cloud-provider-kind). It emulates an
