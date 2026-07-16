@@ -30,4 +30,3 @@ include(":tests:end2end")
 
 // launcher modules
 include(":launchers:dataplane")
-include(":launchers:issuerservice")

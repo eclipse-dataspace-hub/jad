@@ -15,9 +15,9 @@ apiVersion: v2
 name: jad-dataspace-profile
 description: |
   Dataspace-specific seeding for the JAD dataspace, layered on top of a Core Platform
-  Distribution deployment. Defines JAD's credential model: the issuer Attestation/Credential
-  Definitions (Membership + Manufacturer) and the tenant-manager Dataspace Profile, deployed
-  onto the platform-provisioned cell.
+  Distribution deployment. Defines JAD's credential model: the issuer holder
+  AttestationDefinition, the Membership + Manufacturer CredentialDefinitions and the
+  tenant-manager Dataspace Profile, deployed onto the platform-provisioned cell.
 
   Install AFTER the core-platform-distribution release is up in the same namespace. This chart
   reuses the platform's `seed-jobs` ServiceAccount and jwtlet participant mappings; it only

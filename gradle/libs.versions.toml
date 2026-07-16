@@ -3,7 +3,6 @@ format.version = "1.1"
 
 [versions]
 awaitility = "4.3.0"
-bouncyCastle-jdk18on = "1.84"
 edc = "0.19.0-SNAPSHOT"
 edc-build = "1.5.2"
 jackson = "2.22.0"
@@ -27,7 +26,6 @@ edc-core-participantcontext = { module = "org.eclipse.edc:participant-context-co
 edc-core-connector-participantcontext = { module = "org.eclipse.edc:participant-context-connector-core", version.ref = "edc" }
 edc-junit = { module = "org.eclipse.edc:junit", version.ref = "edc" }
 edc-vault-hashicorp = { module = "org.eclipse.edc:vault-hashicorp", version.ref = "edc" }
-edc-store-participantcontext-config-sql = { module = "org.eclipse.edc:participantcontext-config-store-sql", version.ref = "edc" }
 edc-lib-core = { module = "org.eclipse.edc:core-lib", version.ref = "edc" }
 edc-core-sql-bootstrapper = { module = "org.eclipse.edc:sql-bootstrapper", version.ref = "edc" }
 edc-core-http = { module = "org.eclipse.edc:http", version.ref = "edc" }
@@ -39,9 +37,6 @@ edc-api-observability = { module = "org.eclipse.edc:api-observability", version.
 edc-fixtures-mgmtapi = { module = "org.eclipse.edc:management-api-test-fixtures", version.ref = "edc" }
 edc-monitor-otel = { module = "org.eclipse.edc:otel-monitor", version.ref = "edc" }
 edc-monitor-console = { module = "org.eclipse.edc:console-monitor", version.ref = "edc" }
-edc-events-nats = { module = "org.eclipse.edc:events-nats", version.ref = "edc" }
-edc-nats-auth-nkey = { module = "org.eclipse.edc:nats-auth-nkey", version.ref = "edc" }
-edc-vault-transit = { module = "org.eclipse.edc:identity-hub-keypairs-transit", version.ref = "edc" }
 
 # EDC spi dependencies
 edc-spi-core = { module = "org.eclipse.edc:core-spi", version.ref = "edc" }
@@ -52,24 +47,8 @@ edc-spi-keypair = { module = "org.eclipse.edc:keypair-spi", version.ref = "edc" 
 edc-ih-spi-credentials = { module = "org.eclipse.edc:verifiable-credential-spi", version.ref = "edc" }
 edc-ih-spi-participantcontext = { module = "org.eclipse.edc:participant-context-spi", version.ref = "edc" }
 
-# identityhub API modules
-edc-oauth2-client = { module = "org.eclipse.edc:oauth2-client", version.ref = "edc" }
-edc-ih-api-did = { module = "org.eclipse.edc:did-api", version.ref = "edc" }
-edc-ih-api-participants = { module = "org.eclipse.edc:participant-context-api", version.ref = "edc" }
-
-# BOM modules
-edc-bom-identityhub = { module = "org.eclipse.edc:identityhub-oauth2-bom", version.ref = "edc" }
-edc-bom-identityhub-sql = { module = "org.eclipse.edc:identityhub-feature-sql-bom", version.ref = "edc" }
-edc-bom-issuerservice = { module = "org.eclipse.edc:issuerservice-oauth2-bom", version.ref = "edc" }
-edc-bom-issuerservice-sql = { module = "org.eclipse.edc:issuerservice-feature-sql-bom", version.ref = "edc" }
-edcv-bom-controlplane = { module = "org.eclipse.edc:controlplane-virtual-base-bom", version.ref = "edc" }
-edcv-bom-controlplane-sql = { module = "org.eclipse.edc:controlplane-virtual-feature-sql-bom", version.ref = "edc" }
-edcv-bom-controlplane-dcp = { module = "org.eclipse.edc:controlplane-virtual-feature-dcp-bom", version.ref = "edc" }
-edcv-bom-controlplane-nats = { module = "org.eclipse.edc:controlplane-virtual-feature-nats-bom", version.ref = "edc" }
-
 # Third party deps
 awaitility = { module = "org.awaitility:awaitility", version.ref = "awaitility" }
-bouncyCastle-bcprovJdk18on = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncyCastle-jdk18on" }
 jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations", version.ref = "jackson-annotations" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
 tink = { module = "com.google.crypto.tink:tink", version = "1.21.0" }
@@ -83,5 +62,4 @@ opentelemetry-javaagent = { module = "io.opentelemetry.javaagent:opentelemetry-j
 [plugins]
 shadow = { id = "com.gradleup.shadow", version = "9.4.3" }
 edc-build = { id = "org.eclipse.edc.edc-build", version.ref = "edc-build" }
-docker = { id = "com.bmuschko.docker-remote-api", version = "10.0.0" }
 swagger = { id = "io.swagger.core.v3.swagger-gradle-plugin", version.ref = "swagger" }

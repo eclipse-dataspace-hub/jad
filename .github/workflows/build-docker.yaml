@@ -34,9 +34,6 @@ jobs:
     strategy:
       matrix:
         include:
-          - name: issuerservice
-            context: launchers/issuerservice
-            dockerfile: launchers/issuerservice/src/main/docker/Dockerfile
           - name: dataplane
             context: launchers/dataplane
             dockerfile: launchers/dataplane/src/main/docker/Dockerfile

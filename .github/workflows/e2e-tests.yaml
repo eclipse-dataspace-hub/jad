@@ -57,8 +57,7 @@ jobs:
 
       - name: "Load runtime images into KinD"
         run: |-
-          kind load docker-image -n jad ghcr.io/eclipse-dataspace-hub/jad/dataplane:latest \
-                                ghcr.io/eclipse-dataspace-hub/jad/issuerservice:latest
+          kind load docker-image -n jad ghcr.io/eclipse-dataspace-hub/jad/dataplane:latest
 
 
       - name: "Install Traefik Gateway controller"
@@ -83,13 +82,10 @@ jobs:
           # The generic platform (connector, identity hub, issuer service, siglet, CFM,
           # jwtlet/clearglass, gateway, infra + generic seeding), consumed from an OCI registry.
           # The published chart bundles its sub-chart dependencies, so no dependency build here.
-          #
-          # IfNotPresent uses the KinD-loaded JAD images; everything else is pulled from GHCR.
           helm upgrade --install core-platform oci://ghcr.io/eclipse-cfm/charts/core-platform-distribution \
             --version 0.0.9 \
             --namespace edc-v --create-namespace \
             -f platform-override-values.yaml \
-            --set edc.issuerservice.imagePullPolicy=Never \
             --wait --timeout 15m
 
       - name: "Deploy JAD dataspace profile"

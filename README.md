@@ -155,12 +155,10 @@ and now want to see it in action, please follow the following steps to build and
   `docker images`. Then run:
 
   ```shell
-  kind load docker-image \
-      ghcr.io/eclipse-dataspace-hub/jad/issuerservice:latest \
-      ghcr.io/eclipse-dataspace-hub/jad/dataplane:latest -n edcv
+  kind load docker-image ghcr.io/eclipse-dataspace-hub/jad/dataplane:latest -n edcv
   ```
 
-  > Only the `issuerservice` and `dataplane` images are built from this repo. The control plane and IdentityHub are now
+  > Only the `dataplane` image is built from this repo. The control plane, IdentityHub and IssuerService are now
   > provided by the [`platform-images`](https://github.com/eclipse-cfm/platform-images) project and pulled from GHCR by
   > the Core Platform Distribution.
 
@@ -227,7 +225,6 @@ sub-charts). Install the platform first and the dataspace profile second, into t
 ```shell
 # 1) the generic platform (ordered install/upgrade hooks handle bootstrap + generic seeding)
 # Note: if you would like to install a certain version of the platform, specify the --version 0.0.1 parameter
-# The -f override swaps the CPD chart's generic issuerservice for JAD's opinionated build (see note below).
 helm upgrade --install core-platform oci://ghcr.io/eclipse-cfm/charts/core-platform-distribution \
   --namespace edc-v --create-namespace \
   -f platform-override-values.yaml \
@@ -238,11 +235,6 @@ helm upgrade --install jad-dataspace charts/jad-dataspace-profile \
   --namespace edc-v \
   --wait --timeout 10m
 ```
-
-> The Core Platform Distribution ships a generic, "unopinionated" IssuerService. JAD requires the opinionated build
-> that bundles NATS eventing, Vault transit signing, NKey auth and OTel, so
-> [`platform-override-values.yaml`](platform-override-values.yaml) overrides `edc.issuerservice.image` to point at
-> `ghcr.io/eclipse-dataspace-hub/jad/issuerservice`. Keep this `-f` override on every `core-platform` install/upgrade.
 
 > To develop against an unpublished platform chart, point the first command at a local checkout instead of the OCI
 > reference. In that case first resolve its sub-chart dependencies with `helm dependency build <path>` (after
