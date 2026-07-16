@@ -15,8 +15,8 @@
 # Passed via `-f` to the `core-platform` helm install in run_e2e.sh.
 #
 # The CPD chart ships a generic, "unopinionated" issuerservice. JAD needs the
-# opinionated build that bundles its Membership/Manufacturer attestation sources,
-# so we point the issuerservice image at JAD's own image here.
+# opinionated build that bundles NATS eventing, Vault transit signing, NKey auth
+# and OTel, so we point the issuerservice image at JAD's own image here.
 edc:
   issuerservice:
     image:

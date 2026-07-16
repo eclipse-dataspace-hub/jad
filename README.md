@@ -240,7 +240,7 @@ helm upgrade --install jad-dataspace charts/jad-dataspace-profile \
 ```
 
 > The Core Platform Distribution ships a generic, "unopinionated" IssuerService. JAD requires the opinionated build
-> that bundles its Membership/Manufacturer attestation sources, so
+> that bundles NATS eventing, Vault transit signing, NKey auth and OTel, so
 > [`platform-override-values.yaml`](platform-override-values.yaml) overrides `edc.issuerservice.image` to point at
 > `ghcr.io/eclipse-dataspace-hub/jad/issuerservice`. Keep this `-f` override on every `core-platform` install/upgrade.
 

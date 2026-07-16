@@ -5,7 +5,7 @@ healthy in this namespace (IssuerService + TenantManager running, the issuer ten
 a cell created, and the jwtlet `seed-jobs` mapping present).
 
 Seeding runs as post-install/post-upgrade hooks, in order:
-  1. issuer-credentials-seed  (weight 10) — Membership + Manufacturer attestation & credential definitions
+  1. issuer-credentials-seed  (weight 10) — holder attestation + Membership/Manufacturer credential definitions
   2. dataspace-profile-seed   (weight 20) — Dataspace Profile + deployment onto the platform cell
   3. redline-seed             (weight 30) — demo Service Provider, Dataspace and Consumer/Provider tenants in Redline
 

@@ -18,6 +18,7 @@ import org.eclipse.edc.jad.tests.model.ClientCredentials;
 import org.eclipse.edc.jad.tests.model.ParticipantProfile;
 import org.eclipse.edc.spi.monitor.Monitor;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -165,6 +166,7 @@ public record ParticipantOnboarding(String participantName, String participantCo
 
         var body = new HashMap<>(Map.of("identifier", participantContextDid,
                 "properties", Map.of(),
+                "vpaProperties", Map.of("cfm.issuer", holderProperties(participantContextDid)),
                 "cellId", cellId));
 
         if (roles.length > 0) {
@@ -181,6 +183,24 @@ public record ParticipantOnboarding(String participantName, String participantCo
                 .log().ifValidationFails()
                 .statusCode(202)
                 .extract().body().jsonPath().getString("id");
+    }
+
+    /**
+     * Properties for the Holder entity that the onboarding orchestration creates on the IssuerService.
+     * The issuer's "holder" attestation returns these verbatim, and the credential definitions map them
+     * into the {@code credentialSubject} of the Membership and Manufacturer credentials.
+     */
+    private Map<String, Object> holderProperties(String holderId) {
+        var now = Instant.now().toString();
+        return Map.of(
+                "id", holderId,
+                "membership", Map.of("since", now),
+                "membershipType", "full-member",
+                "membershipStartDate", now,
+                "contractVersion", "1.0.0",
+                "component_types", "all",
+                "since", now
+        );
     }
 
 

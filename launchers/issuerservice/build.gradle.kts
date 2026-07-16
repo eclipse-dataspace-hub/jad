@@ -29,7 +29,6 @@ configurations.all {
 }
 
 dependencies {
-    implementation(libs.edc.issuance.spi) // for seeding the attestations
     runtimeOnly(libs.edc.bom.issuerservice)
     runtimeOnly(libs.edc.ih.api.did)
     runtimeOnly(libs.edc.ih.api.participants)

@@ -57,9 +57,6 @@ edc-oauth2-client = { module = "org.eclipse.edc:oauth2-client", version.ref = "e
 edc-ih-api-did = { module = "org.eclipse.edc:did-api", version.ref = "edc" }
 edc-ih-api-participants = { module = "org.eclipse.edc:participant-context-api", version.ref = "edc" }
 
-# issuerservice SPI module
-edc-issuance-spi = { module = "org.eclipse.edc:issuerservice-issuance-spi", version.ref = "edc" }
-
 # BOM modules
 edc-bom-identityhub = { module = "org.eclipse.edc:identityhub-oauth2-bom", version.ref = "edc" }
 edc-bom-identityhub-sql = { module = "org.eclipse.edc:identityhub-feature-sql-bom", version.ref = "edc" }
