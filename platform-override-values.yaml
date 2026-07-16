@@ -14,14 +14,6 @@
 # JAD-specific override for the Core Platform Distribution (CPD) release.
 # Passed via `-f` to the `core-platform` helm install in run_e2e.sh.
 #
-# The CPD chart ships a generic, "unopinionated" issuerservice. JAD needs the
-# opinionated build that bundles NATS eventing, Vault transit signing, NKey auth
-# and OTel, so we point the issuerservice image at JAD's own image here.
-edc:
-  issuerservice:
-    image:
-      repo: eclipse-dataspace-hub/jad/issuerservice
-      tag: latest
 
 # Redline (jad-dataspace-profile chart) needs its "redlinedb" database provisioned by
 # the platform's postgres-init hook. Helm replaces lists wholesale, so the platform's
