@@ -436,11 +436,11 @@ unauthenticated at the gateway level.
 
 | Service             | Exposed path        | Rewrites to            | Backend port | Auth middleware                        |
 |---------------------|---------------------|------------------------|--------------|----------------------------------------|
-| Control Plane       | `/api/management`   | `/api/mgmt`            | `8081`       | `jwt-auth-management-api`              |
-| Identity Hub        | `/api/identity`     | `/api/identity/v1beta` | `7081`       | `jwt-auth-identity-api`                |
-| Issuer Service      | `/api/issuer/admin` | `/api/admin/v1beta`    | `10013`      | `jwt-auth-issuer-admin-api`            |
-| Provision Manager   | `/api/pm`           | `/api/v1beta`          | `8080`       | `jwt-auth-provision-manager-api`       |
-| Tenant Manager      | `/api/tm`           | `/api/v1alpha1`        | `8080`       | `jwt-auth-tenant-manager-api`          |
+| Control Plane       | `/api/management`   | `/api/mgmt`            | `8081`       | `jwt-auth`                             |
+| Identity Hub        | `/api/identity`     | `/api/identity/v1beta` | `7081`       | `jwt-auth`                             |
+| Issuer Service      | `/api/issuer/admin` | `/api/admin/v1beta`    | `10013`      | `jwt-auth`                             |
+| Provision Manager   | `/api/pm`           | `/api/v1beta`          | `8080`       | `jwt-auth`                             |
+| Tenant Manager      | `/api/tm`           | `/api/v1alpha1`        | `8080`       | `jwt-auth`                             |
 | Dataplane (public)  | `/api/dp/public`    | `/`                    | `11002`      | —                                      |
 | Dataplane (control) | `/api/dp/control`   | `/`                    | `8083`       | —                                      |
 | Dataplane (certs)   | `/api/dp/certs`     | `/`                    | `8186`       | —                                      |
@@ -451,15 +451,11 @@ unauthenticated at the gateway level.
 
 ### Auth middleware scopes
 
-Each `jwt-auth-*` middleware enforces a specific pair of OAuth2 scopes (`read` and `write`):
-
-| Middleware                       | Required scopes                                             |
-|----------------------------------|-------------------------------------------------------------|
-| `jwt-auth-management-api`        | `management-api:read`, `management-api:write`               |
-| `jwt-auth-identity-api`          | `identity-api:read`, `identity-api:write`                   |
-| `jwt-auth-issuer-admin-api`      | `issuer-admin-api:read`, `issuer-admin-api:write`           |
-| `jwt-auth-provision-manager-api` | `provision-manager-api:read`, `provision-manager-api:write` |
-| `jwt-auth-tenant-manager-api`    | `tenant-manager-api:read`, `tenant-manager-api:write`       |
+All authenticated routes share the single scope-less `jwt-auth` middleware: clearglass derives the scope
+requirements from its route→scope map (`security.clearglass.routeMap.rules` in the Core Platform Distribution
+chart's `values.yaml`), evaluated first-match-wins with default deny and scope implication
+(`admin ⊇ write ⊇ read`, api-level covers resource-level). See
+[docs/token-exchange.md §4.3](docs/token-exchange.md) for the per-endpoint scope reference.
 
 ### Infrastructure routes (each on their own hostname)
 

@@ -60,7 +60,7 @@ edc:
 # (k8s/apps/ui/ui.yaml + ui-config.yaml).
 # =============================================================================
 ui:
-  enabled: true
+  enabled: false
   image:
     repo: ghcr.io/aruba-it-s-p-a/edc-public-participant-portal
     tag: demo-madrid
@@ -82,7 +82,7 @@ ui:
 # platform-override-values.yaml.
 # =============================================================================
 redline:
-  enabled: true
+  enabled: false
   image:
     repo: metaform/redline
     tag: latest

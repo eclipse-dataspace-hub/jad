@@ -352,9 +352,10 @@ Scopes are enforced twice — once at the gateway, once inside the services:
    first-match-wins against the *rewritten* backend path, with **default deny**; each rule names the narrowest
    sufficient scope and the implication rules above apply. A token that lacks the required scope is rejected with
    `403` and an *"insufficient scope"* error before it ever reaches the service. §4.3 lists the resulting
-   per-endpoint scope requirements. The older per-API Traefik `jwt-auth-*` middlewares (see
-   [README → Auth middleware scopes](../README.md#auth-middleware-scopes)) still perform the coarse per-API
-   `read`/`write` check in addition.
+   per-endpoint scope requirements. All authenticated HTTPRoutes attach the single scope-less `jwt-auth`
+   middleware; the route map is the only scope check at the gateway. (The older per-API `jwt-auth-<name>`
+   middlewares with their exact-match `?scope=` params — which notably rejected wider scopes such as
+   `identity-api:admin` — have been removed.)
 2. **Services:** the EDC services verify the token themselves and enforce the same scope requirements (plus per-tenant
    ownership) internally, so in-cluster calls that bypass the gateway are still authorized.
 

@@ -22,9 +22,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
-import static io.restassured.RestAssured.given;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -94,18 +92,6 @@ public record ParticipantOnboarding(String participantName, String participantCo
                 .extract().body().jsonPath().getString("[0].id");
     }
 
-    //we could the full HashicorpVault for this, but a REST request is simpler here
-    private String getVaultSecret(String participantContextId) {
-        return given()
-                .baseUri(Constants.VAULT_URL)
-                .header("X-Vault-Token", vaultToken)
-                .get("/v1/secret/data/%s".formatted(participantContextId))
-                .then()
-                .log().ifValidationFails()
-                .statusCode(200)
-                .extract().body().jsonPath().getString("data.data.content");
-    }
-
     /**
      * Retrieves an Orchestration object by its ID.
      *
@@ -121,35 +107,6 @@ public record ParticipantOnboarding(String participantName, String participantCo
                 .log().ifValidationFails()
                 .statusCode(200)
                 .extract().body().as(ParticipantProfile.class);
-    }
-
-    /**
-     * Queries an orchestration object by its correlation ID, which is the participantProfileID
-     *
-     * @param participantProfileId the participant profile ID
-     * @return the orchestration ID
-     */
-    private String queryOrchestrationByProfileId(String participantProfileId) {
-        var orchestrationId = new AtomicReference<String>();
-        await().atMost(20, SECONDS)
-                .pollInterval(1, SECONDS).untilAsserted(() -> {
-                    var body = given()
-                            .baseUri(Constants.PM_BASE_URL)
-                            .contentType(Constants.APPLICATION_JSON)
-                            .body("""
-                                    {
-                                         "predicate": "correlationId = '%s'"
-                                    }
-                                    """.formatted(participantProfileId))
-                            .post("/api/orchestrations/query")
-                            .then()
-                            .log().ifValidationFails()
-                            .statusCode(200)
-                            .extract().body();
-                    orchestrationId.set(body.jsonPath().getString("[0].id"));
-
-                });
-        return orchestrationId.get();
     }
 
 
