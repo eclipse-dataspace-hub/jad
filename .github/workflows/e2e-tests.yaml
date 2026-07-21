@@ -84,7 +84,7 @@ jobs:
           # jwtlet/clearglass, gateway, infra + generic seeding), consumed from an OCI registry.
           # The published chart bundles its sub-chart dependencies, so no dependency build here.
           helm upgrade --install core-platform oci://ghcr.io/eclipse-cfm/charts/core-platform-distribution \
-            --version 0.0.9 \
+            --version 0.0.11 \
             --namespace edc-v --create-namespace \
             -f platform-override-values.yaml \
             --wait --timeout 15m
