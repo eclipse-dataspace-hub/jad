@@ -96,7 +96,7 @@ sequenceDiagram
     participant E as EDC API (control plane / IdentityHub / IssuerService)
 
     Note over W: Pod has a projected SA token<br/>(aud = cluster issuer)
-    W->>J: POST /token (grant_type=token-exchange,<br/>subject_token=<SA JWT>, resource, scope, audience)
+    W->>J: POST /token (grant_type=token-exchange,<br/>subject_token=<SA JWT>, subject_token_type=jwt,<br/>resource, scope, audience)
     J->>K: TokenReview(subject_token)
     K-->>J: valid → "system:serviceaccount:<ns>:<sa>"
     Note over J: look up mapping for that client,<br/>expand requested scope(s),<br/>sign token with Vault key
@@ -117,6 +117,7 @@ curl -X POST "http://jwtlet.edc-v.svc.cluster.local:8080/token" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   --data-urlencode "grant_type=urn:ietf:params:oauth:grant-type:token-exchange" \
   --data-urlencode "subject_token=${SA_TOKEN}" \
+  --data-urlencode "subject_token_type=urn:ietf:params:oauth:token-type:jwt" \
   --data-urlencode "resource=issuer" \
   --data-urlencode "scope=admin" \
   --data-urlencode "audience=edcv"
@@ -127,6 +128,7 @@ curl -X POST "http://jwtlet.edc-v.svc.cluster.local:8080/token" \
 |-----------------|-------------------------------------------------------------------------------------------------------------|
 | `grant_type`    | always `urn:ietf:params:oauth:grant-type:token-exchange`                                                    |
 | `subject_token` | the workload's **projected Kubernetes ServiceAccount token**                                                |
+| `subject_token_type` | always `urn:ietf:params:oauth:token-type:jwt` — the subject token is a JWT (RFC 8693 §3)                |
 | `resource`      | selects which of the caller's mappings to use; its `participantContext` becomes the issued token's `sub`    |
 | `scope`         | one or more scope identifiers, space-separated — **narrow scopes** like `management-api:assets:read` (preferred) or a legacy coarse tier (`read`, `write`, `admin`, …); each is expanded per §4 |
 | `audience`      | the audience to mint the token for; must match jwtlet's configured `[token].audience` (`edcv`)              |
@@ -583,6 +585,7 @@ ACCESS_TOKEN=$(curl -s -X POST "http://jwtlet.edc-v.svc.cluster.local:8080/token
   -H "Content-Type: application/x-www-form-urlencoded" \
   --data-urlencode "grant_type=urn:ietf:params:oauth:grant-type:token-exchange" \
   --data-urlencode "subject_token=${SA_TOKEN}" \
+  --data-urlencode "subject_token_type=urn:ietf:params:oauth:token-type:jwt" \
   --data-urlencode "resource=<participant-context-id>" \
   --data-urlencode "scope=management-api:contractdefinitions:read" \
   --data-urlencode "audience=edcv" | sed -n 's/.*"access_token":"\([^"]*\)".*/\1/p')
