@@ -46,10 +46,10 @@ import java.util.Set;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.edc.jad.tests.Constants.APPLICATION_JSON;
-import static org.eclipse.edc.jad.tests.Constants.PARTICIPANT_DID_PREFIX;
 import static org.eclipse.edc.jad.tests.Constants.CONTROLPLANE_BASE_URL;
 import static org.eclipse.edc.jad.tests.Constants.CONTROLPLANE_PROTOCOL_URL;
 import static org.eclipse.edc.jad.tests.Constants.DATAPLANE_BASE_URL;
+import static org.eclipse.edc.jad.tests.Constants.PARTICIPANT_DID_PREFIX;
 import static org.eclipse.edc.jad.tests.Constants.SIGLET_BASE_URL;
 import static org.eclipse.edc.jad.tests.Constants.TM_BASE_URL;
 
