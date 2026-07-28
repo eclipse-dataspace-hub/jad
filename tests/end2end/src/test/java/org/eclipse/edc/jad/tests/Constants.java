@@ -27,6 +27,13 @@ public interface Constants {
     String SIGLET_BASE_URL = "http://jad.localhost/api/siglet";
     String DATAPLANE_BASE_URL = "http://jad.localhost/";
     String IDENTITYHUB_BASE_URL = "http://jad.localhost/api/identity";
-    String CONTROLPLANE_PROTOCOL_URL = "http://controlplane.edc-v.svc.cluster.local:8082/api/dsp/%s/http-dsp-profile-2025-1";
+    // The advertised DSP endpoint (matches the platform's edc.dsp.callback.address). Resolvable
+    // from inside the cluster through the coredns-rewrite seed job of the jad-dataspace-profile
+    // chart, which points the gateway hostnames at the Traefik Service.
+    String CONTROLPLANE_PROTOCOL_URL = "http://jad.localhost/api/dsp/%s/http-dsp-profile-2025-1";
     String TOKEN_EXCHANGE_URL = "http://jad.localhost/api/auth/token";
+    // Prefix for participant DIDs (participant name appended). Must match the platform
+    // IdentityHub's did:web hostname (identity.<host>): IdentityHub resolves a DID document by
+    // the request URL, so a DID under any other authority will not resolve through the gateway.
+    String PARTICIPANT_DID_PREFIX = "did:web:identity.jad.localhost:";
 }

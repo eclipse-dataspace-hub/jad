@@ -46,6 +46,7 @@ import java.util.Set;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.edc.jad.tests.Constants.APPLICATION_JSON;
+import static org.eclipse.edc.jad.tests.Constants.PARTICIPANT_DID_PREFIX;
 import static org.eclipse.edc.jad.tests.Constants.CONTROLPLANE_BASE_URL;
 import static org.eclipse.edc.jad.tests.Constants.CONTROLPLANE_PROTOCOL_URL;
 import static org.eclipse.edc.jad.tests.Constants.DATAPLANE_BASE_URL;
@@ -95,21 +96,21 @@ public class DataTransferEndToEndTest {
         // onboard consumer
         MONITOR.info("Onboarding (standard) consumer");
         var consumerName = "consumer-" + slug;
-        var consumerContextId = "did:web:identityhub.edc-v.svc.cluster.local%3A7083:" + consumerName;
+        var consumerContextId = PARTICIPANT_DID_PREFIX + consumerName;
         var po = new ParticipantOnboarding(consumerName, consumerContextId, VAULT_TOKEN, MONITOR.withPrefix("Consumer " + slug), DYNAMIC_TOKEN_PROVIDER);
         consumerCredentials = po.execute(cellId);
 
         // onboard provider
         MONITOR.info("Onboarding provider");
         var providerName = "provider-" + slug;
-        providerContextId = "did:web:identityhub.edc-v.svc.cluster.local%3A7083:" + providerName;
+        providerContextId = PARTICIPANT_DID_PREFIX + providerName;
         var providerPo = new ParticipantOnboarding(providerName, providerContextId, VAULT_TOKEN, MONITOR.withPrefix("Provider " + slug), DYNAMIC_TOKEN_PROVIDER);
         providerCredentials = providerPo.execute(cellId);
 
         // onboard manufacturer consumer - only this one will see some assets
         MONITOR.info("Onboarding manufacturer consumer");
         var name = "manufacturer-" + slug;
-        var manufacturerContextId = "did:web:identityhub.edc-v.svc.cluster.local%3A7083:" + name;
+        var manufacturerContextId = PARTICIPANT_DID_PREFIX + name;
         var manufacturerPo = new ParticipantOnboarding(name, manufacturerContextId, VAULT_TOKEN, MONITOR.withPrefix("Manufacturer " + slug), DYNAMIC_TOKEN_PROVIDER);
         manufacturerCredentials = manufacturerPo.execute(cellId, "manufacturer");
     }

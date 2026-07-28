@@ -1,0 +1,197 @@
+#
+# Copyright (c) 2026 Metaform Systems, Inc.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License, Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Contributors:
+#      Metaform Systems, Inc. - initial API and implementation
+#
+
+## Makes the gateway hostnames resolvable from INSIDE the cluster by adding `rewrite` rules to
+## the CoreDNS Corefile that point them at the Traefik Service.
+##
+## Why: the URLs the platform advertises about itself — the DSP callback address, the DCP
+## credential-service and issuance endpoints, and the did:web identifiers
+## (did:web:issuer.<host>:issuer, did:web:identity.<host>:<participant>) — all live under the
+## gateway hostnames, and the RUNTIMES dereference them: the control plane resolves DIDs to
+## verify credentials and calls the CredentialService on every DSP message. On a plain
+## KinD/Minikube cluster a `*.localhost` name resolves to the pod's own loopback and every one
+## of those lookups fails.
+##
+## The rewrite lines are rendered at template time from `global.host` (plus
+## `seedJobs.corednsRewrite.extraHostnames`); the job only replaces its marker-delimited block
+## in the Corefile, restarts CoreDNS, and polls until a hostname actually resolves — which
+## doubles as verification and keeps the RBAC narrow. The rewrite target's DNS domain is the
+## CLUSTER'S OWN (global.clusterDomain minus `svc.`): a target under `cluster.local` on a
+## cluster whose domain differs silently NXDOMAINs, because CoreDNS's kubernetes plugin is not
+## authoritative for it.
+##
+## Requires RBAC on kube-system (scoped to the coredns ConfigMap/Deployment, see below);
+## disable via seedJobs.corednsRewrite.enabled on clusters where that is not allowed and
+## provide resolution another way. `helm uninstall` does not remove the block (hook resources
+## are not release-tracked); it is inert without the routes.
+
+{{- if .Values.seedJobs.corednsRewrite.enabled }}
+{{- $cr := .Values.seedJobs.corednsRewrite }}
+{{- $dnsDomain := trimPrefix "svc." .Values.global.clusterDomain }}
+{{- $target := printf "%s.%s.svc.%s" $cr.traefikService $cr.traefikNamespace $dnsDomain }}
+{{- $beginMarker := printf "# BEGIN jad did-dns (%s)" .Release.Name }}
+{{- $endMarker := printf "# END jad did-dns (%s)" .Release.Name }}
+{{- /* The counterparty-facing hostnames: the gateway host itself plus the two did:web hosts
+       the platform derives from it. Only these are dereferenced from inside the cluster —
+       the telemetry hosts are browser-facing and need no in-cluster resolution. */}}
+{{- $hosts := list .Values.global.host (printf "issuer.%s" .Values.global.host) (printf "identity.%s" .Values.global.host) }}
+{{- $hosts = concat $hosts ($cr.extraHostnames | default list) | uniq }}
+---
+# Dedicated ServiceAccount: the kube-system grant below is deliberately NOT attached to the
+# shared seed-jobs SA, so the blast radius of this job stays isolated and auditable.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: coredns-rewrite
+  namespace: {{ include "cpd.namespace" . }}
+  labels:
+    {{- include "cpd.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation
+---
+# Narrowly-scoped access in kube-system: exactly the coredns ConfigMap (read + apply) and the
+# coredns Deployment (restart = patch). resourceNames cannot scope `create`, but apply on the
+# pre-existing ConfigMap only needs get/patch/update.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ printf "coredns-rewrite-%s" (include "cpd.namespace" .) }}
+  namespace: kube-system
+  labels:
+    {{- include "cpd.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    resourceNames: ["coredns"]
+    verbs: ["get", "patch", "update"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    resourceNames: ["coredns"]
+    verbs: ["get", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ printf "coredns-rewrite-%s" (include "cpd.namespace" .) }}
+  namespace: kube-system
+  labels:
+    {{- include "cpd.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ printf "coredns-rewrite-%s" (include "cpd.namespace" .) }}
+subjects:
+  - kind: ServiceAccount
+    name: coredns-rewrite
+    namespace: {{ include "cpd.namespace" . }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: coredns-rewrite
+  namespace: {{ include "cpd.namespace" . }}
+  labels:
+    app: coredns-rewrite
+    platform: edcv
+    type: edcv-job
+    {{- include "cpd.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    # Runs before the other seed hooks (weights >= 10): by the time anything exercises the
+    # advertised URLs, the rewrites are live.
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": {{ .Values.seedJobs.hookDeletePolicy | quote }}
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: {{ .Values.seedJobs.ttlSecondsAfterFinished }}
+  template:
+    metadata:
+      labels:
+        app: coredns-rewrite
+        platform: edcv
+        type: edcv-job
+    spec:
+      serviceAccountName: coredns-rewrite
+      restartPolicy: OnFailure
+      containers:
+        - name: coredns-rewrite
+          image: {{ .Values.seedJobs.images.kubectl }}
+          command: [ "bash", "-ec" ]
+          args:
+            - |
+              # Rendered at template time; the job only manages the block and reloads CoreDNS.
+              cat > /tmp/block <<'EOF'
+                  {{ $beginMarker }}
+              {{- range $h := $hosts }}
+                  rewrite name {{ $h }} {{ $target }}
+              {{- end }}
+                  {{ $endMarker }}
+              EOF
+
+              kubectl -n kube-system get configmap coredns -o jsonpath='{.data.Corefile}' > /tmp/Corefile.cur
+
+              # Replace any previous block (exact-line marker match), insert the new one at the
+              # top of the .:53 server block. Placement is cosmetic: CoreDNS plugin ordering is
+              # fixed at build time, `rewrite` runs before `kubernetes` wherever it appears.
+              awk 'BEGIN{skip=0}
+                   {t=$0; sub(/^[ \t]+/,"",t)}
+                   t=="{{ $beginMarker }}"{skip=1}
+                   !skip{print}
+                   t=="{{ $endMarker }}"{skip=0}' /tmp/Corefile.cur \
+                | sed '/^\.:53 {/r /tmp/block' > /tmp/Corefile.new
+
+              if ! grep -qF '{{ $beginMarker }}' /tmp/Corefile.new; then
+                echo "ERROR: no '.:53 {' server block found in the Corefile — cannot place the rewrites." >&2
+                echo "Set seedJobs.corednsRewrite.enabled=false and configure DNS manually." >&2
+                exit 1
+              fi
+
+              if cmp -s /tmp/Corefile.cur /tmp/Corefile.new; then
+                echo "CoreDNS rewrites already up to date"
+              else
+                echo "Applying CoreDNS rewrites:"
+                grep 'rewrite name' /tmp/block
+                kubectl -n kube-system create configmap coredns \
+                  --from-file=Corefile=/tmp/Corefile.new --dry-run=client -o yaml \
+                  | kubectl apply -f -
+                # The Corefile ships the `reload` plugin; the restart just makes the change
+                # take effect immediately instead of within the reload poll interval.
+                kubectl -n kube-system rollout restart deployment/coredns
+              fi
+
+              # Poll until a rewritten name actually resolves — end-to-end verification through
+              # the pod's own resolver (glibc getent; no curl — curl and musl both short-circuit
+              # *.localhost to loopback without ever querying DNS). Covers CoreDNS rollout and
+              # negative-cache expiry.
+              echo "Waiting for '{{ .Values.global.host }}' to resolve in-cluster..."
+              for i in $(seq 1 60); do
+                if getent hosts {{ .Values.global.host }} >/dev/null 2>&1; then
+                  echo "OK: $(getent hosts {{ .Values.global.host }} | head -1)"
+                  exit 0
+                fi
+                sleep 2
+              done
+              echo "ERROR: '{{ .Values.global.host }}' still does not resolve." >&2
+              echo "Is the Traefik Service really at {{ $target }} (seedJobs.corednsRewrite.*)?" >&2
+              exit 1
+{{- end }}

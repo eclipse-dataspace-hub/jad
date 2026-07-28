@@ -15,6 +15,15 @@
 # Passed via `-f` to the `core-platform` helm install in run_e2e.sh.
 #
 
+# JAD's gateway hostname, set EXPLICITLY rather than relying on the chart default (which has
+# changed before, jad.localhost -> cpd.localhost). Everything the platform advertises about
+# itself hangs off this host: the DSP callback, the DCP endpoints and the did:web identifiers
+# (did:web:issuer.jad.localhost:issuer, did:web:identity.jad.localhost:<participant>). It must
+# stay in sync with the jad-dataspace-profile chart's global.host, issuer.did and the e2e test
+# constants.
+global:
+  host: jad.localhost
+
 # Redline (jad-dataspace-profile chart) needs its "redlinedb" database provisioned by
 # the platform's postgres-init hook. Helm replaces lists wholesale, so the platform's
 # default databases must be repeated here alongside the JAD-specific entry.

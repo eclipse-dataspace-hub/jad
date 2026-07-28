@@ -142,6 +142,23 @@ seedJobs:
     curl: curlimages/curl:latest
     # The redline seed script needs jq to parse responses.
     curlJq: badouralix/curl-jq
+    # Used by the coredns-rewrite hook; must provide kubectl AND glibc (the job verifies with
+    # `getent` — musl images synthesize *.localhost to loopback without ever querying DNS).
+    kubectl: bitnami/kubectl:latest
+  # Rewrites the cluster's CoreDNS so the gateway hostnames (global.host and the did:web hosts
+  # issuer.<host> / identity.<host>) resolve to the Traefik Service from INSIDE the cluster.
+  # The URLs and did:web identifiers the platform advertises live under those hostnames and are
+  # dereferenced by the runtimes themselves — on a plain KinD/Minikube cluster a *.localhost
+  # name resolves to the pod's own loopback and DID resolution fails without this.
+  # Needs (narrowly-scoped) RBAC on the coredns ConfigMap/Deployment in kube-system; disable
+  # on clusters where that is not allowed and configure DNS manually. The Traefik coordinates
+  # must match the actual gateway controller install.
+  corednsRewrite:
+    enabled: true
+    traefikService: traefik
+    traefikNamespace: traefik
+    # Additional hostnames to rewrite, e.g. when the platform overrides its did:web hosts.
+    extraHostnames: []
   # Toggle the seeding phases independently.
   issuerCredentials:
     enabled: true
@@ -158,3 +175,16 @@ seedJobs:
 # tenant created by the platform issuerservice-seed).
 issuer:
   participantContextId: issuer
+  # The issuer's DID, used verbatim as the credential issuer in the dataspace profile's
+  # credentialSpecs. It MUST equal the DID core-platform-distribution minted for the issuer
+  # participant context, or every credential fails verification — the platform derives it from
+  # its gateway hostname as did:web:issuer.<host>:issuer unless pinned there outright via
+  # edc.issuerservice.did.id. Read the live value with:
+  #   kubectl -n <ns> get httproute issuerservice-did -o jsonpath='{.spec.hostnames[0]}'
+  did: "did:web:issuer.jad.localhost:issuer"
+
+participants:
+  # Prefix for participant DIDs (participant name appended). "" derives
+  # "did:web:identity.<global.host>:", matching the platform IdentityHub's did:web hostname;
+  # set explicitly when the platform overrides edc.identityhub.did.host.
+  didPrefix: ""

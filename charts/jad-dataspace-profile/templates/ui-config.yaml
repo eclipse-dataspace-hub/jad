@@ -44,7 +44,7 @@ data:
         "enableAuth": false,
         "tokenKey": "auth_token"
       },
-      "participantIdentifierPrefix": "did:web:{{ include "cpd.fqdn" (dict "svc" "identityhub" "ctx" $) }}%3A7083:"
+      "participantIdentifierPrefix": "{{ include "jad.participantDidPrefix" $ }}"
     }
 
 ---

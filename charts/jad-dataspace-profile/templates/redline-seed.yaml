@@ -61,9 +61,9 @@ spec:
             - name: REDLINE_BASE_URL
               value: "http://{{ include "cpd.fqdn" (dict "svc" "redline" "ctx" $) }}:8081/api/ui"
             - name: CONSUMER_DID
-              value: "did:web:{{ include "cpd.fqdn" (dict "svc" "identityhub" "ctx" $) }}%3A7083:{{ .Values.seedJobs.redline.consumerName }}"
+              value: "{{ include "jad.participantDidPrefix" $ }}{{ .Values.seedJobs.redline.consumerName }}"
             - name: PROVIDER_DID
-              value: "did:web:{{ include "cpd.fqdn" (dict "svc" "identityhub" "ctx" $) }}%3A7083:{{ .Values.seedJobs.redline.providerName }}"
+              value: "{{ include "jad.participantDidPrefix" $ }}{{ .Values.seedJobs.redline.providerName }}"
           command:
             - sh
             - -c

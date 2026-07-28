@@ -89,6 +89,7 @@ public class TokenExchange {
                 .contentType("application/x-www-form-urlencoded")
                 .formParam("grant_type", "urn:ietf:params:oauth:grant-type:token-exchange")
                 .formParam("subject_token", workloadToken)
+                .formParam("subject_token_type", "urn:ietf:params:oauth:token-type:jwt")
                 .formParam("resource", resource)
                 .formParam("scope", scopes)
                 .post()
