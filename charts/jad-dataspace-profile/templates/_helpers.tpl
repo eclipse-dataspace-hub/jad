@@ -19,9 +19,30 @@ script blocks are identical across both charts.
 {{- printf "%s.%s.%s" .svc (include "cpd.namespace" .ctx) .ctx.Values.global.clusterDomain -}}
 {{- end -}}
 
-{{/* Trusted-issuer DID (URL-encoded port, e.g. did:web:<host>%3A10016:issuer). */}}
+{{/* Trusted-issuer DID, taken verbatim from `issuer.did`.
+
+     It MUST equal the DID the platform actually minted for the issuer participant context: it
+     is written into the dataspace profile's credentialSpecs, and every issued credential is
+     verified against it. A mismatch surfaces only at credential verification, far from the
+     cause, so this is deliberately a plain configured value rather than something derived —
+     core-platform-distribution builds the DID from its own settings (normally
+     did:web:issuer.<global.host>:issuer, or pinned via edc.issuerservice.did.id), and any
+     second copy of that rule silently drifts when the platform is reconfigured.
+
+     Read the live value off the deployment with either of:
+       kubectl -n <ns> get httproute issuerservice-did -o jsonpath='{.spec.hostnames[0]}'
+       helm -n <ns> get values core-platform */}}
 {{- define "cpd.issuerDid" -}}
-{{- printf "did:web:%s%%3A10016:issuer" (include "cpd.fqdn" (dict "svc" "issuerservice" "ctx" .)) -}}
+{{- required "issuer.did must be set to the platform's issuer DID (see values.yaml)" .Values.issuer.did -}}
+{{- end -}}
+
+{{/* Prefix for participant DIDs (the participant name is appended). Participants are minted
+     under the platform IdentityHub's did:web hostname, identity.<global.host> — IdentityHub
+     resolves a DID document by the request URL, so a DID under any other authority will not
+     resolve through the gateway. Override with `participants.didPrefix` when the platform uses
+     a custom edc.identityhub.did.host. */}}
+{{- define "jad.participantDidPrefix" -}}
+{{- .Values.participants.didPrefix | default (printf "did:web:identity.%s:" .Values.global.host) -}}
 {{- end -}}
 
 {{- define "cpd.labels" -}}

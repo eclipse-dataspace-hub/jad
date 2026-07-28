@@ -82,9 +82,10 @@ jobs:
         run: |-
           # The generic platform (connector, identity hub, issuer service, siglet, CFM,
           # jwtlet/clearglass, gateway, infra + generic seeding), consumed from an OCI registry.
-          # The published chart bundles its sub-chart dependencies, so no dependency build here.
+          # Keep the version in sync with CPD_VERSION in run_e2e.sh — >= 0.0.17 for the
+          # gateway-hostname DID scheme this repo's issuer/participant DIDs assume.
           helm upgrade --install core-platform oci://ghcr.io/eclipse-cfm/charts/core-platform-distribution \
-            --version 0.0.16 \
+            --version 0.0.17 \
             --namespace edc-v --create-namespace \
             -f platform-override-values.yaml \
             --wait --timeout 15m

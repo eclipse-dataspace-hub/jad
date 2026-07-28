@@ -53,6 +53,7 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.edc.jad.tests.Constants.APPLICATION_JSON;
 import static org.eclipse.edc.jad.tests.Constants.CONTROLPLANE_BASE_URL;
+import static org.eclipse.edc.jad.tests.Constants.PARTICIPANT_DID_PREFIX;
 import static org.eclipse.edc.jad.tests.Constants.TM_BASE_URL;
 
 /**
@@ -91,7 +92,7 @@ public class KeyRotationEndToEndTest {
         // onboard participant
         MONITOR.info("Onboarding participant");
         var providerName = "participant-" + slug;
-        participantIdentifier = "did:web:identityhub.edc-v.svc.cluster.local%3A7083:" + providerName;
+        participantIdentifier = PARTICIPANT_DID_PREFIX + providerName;
         var providerPo = new ParticipantOnboarding(providerName, participantIdentifier, VAULT_TOKEN, MONITOR.withPrefix("Participant " + slug), TOKEN_PROVIDER);
         participantCredentials = providerPo.execute(cellId);
     }
