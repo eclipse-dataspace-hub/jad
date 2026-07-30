@@ -245,6 +245,7 @@ sub-charts). Install the platform first and the dataspace profile second, into t
 # Note: if you would like to install a certain version of the platform, specify the --version 0.0.17 parameter
 helm upgrade --install core-platform oci://ghcr.io/eclipse-cfm/charts/core-platform-distribution \
   --namespace edc-v --create-namespace \
+  --version <VERSION> \
   -f platform-override-values.yaml \
   --wait --timeout 15m
 
