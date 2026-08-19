@@ -263,7 +263,10 @@ public class DataTransferEndToEndTest {
                 "http://siglet.edc-v.svc.cluster.local:8081/api/v1/%s/dataflows".formatted(participantContextId),
                 Set.of("https://w3id.org/dspace-sig/profile/http-pull"),
                 Set.of(),
-                null
+                Map.of("type", "oauth2_token_exchange",
+                        "tokenExchangeEndpoint", "http://jwtlet.edc-v.svc.cluster.local:8080/token",
+                        "resource", participantContextId,
+                        "scope", "signaling")
         ));
     }
 
