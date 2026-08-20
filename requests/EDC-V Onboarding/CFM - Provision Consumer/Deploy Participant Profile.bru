@@ -13,26 +13,30 @@ post {
 body:json {
   {
     "id": "{{$randomAlphaNumeric}}",
-    "identifier": "{{participant_did}}-{{$randomUUID}}",
+    "identifier": "{{participant_did}}",
     "properties": {},
     "cellId": "{{cell_id}}",
     "version": 0,
     "vpaProperties": {
-      "cfm.issuer":{
-        "key1": "value1",
-        "bar": "baz"
-      }    
+      "cfm.issuer": {
+        "id": "{{participant_did}}",
+        "membership": {
+          "since": "{{$isoTimestamp}}"
+        },
+        "membershipType": "full-member",
+        "membershipStartDate": "{{$isoTimestamp}}",
+        "contractVersion": "1.0.0",
+        "component_types": "all",
+        "since": "{{$isoTimestamp}}"
+      }
     },
     "participantRoles": {
       "{{dataspace_id}}": [
         "manufacturer"
       ]
     },
-    "properties": {
-    }
+    "properties": {}
   }
-  
-  
 }
 
 vars:pre-request {

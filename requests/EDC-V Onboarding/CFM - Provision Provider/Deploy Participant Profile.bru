@@ -17,7 +17,19 @@ body:json {
     "properties": {},
     "cellId": "{{cell_id}}",
     "version": 0,
-    "vpaProperties": {}
+    "vpaProperties": {
+      "cfm.issuer": {
+        "id": "{{participant_did}}",
+        "membership": {
+          "since": "{{$isoTimestamp}}"
+        },
+        "membershipType": "full-member",
+        "membershipStartDate": "{{$isoTimestamp}}",
+        "contractVersion": "1.0.0",
+        "component_types": "all",
+        "since": "{{$isoTimestamp}}"
+      }
+    }
   }
 }
 

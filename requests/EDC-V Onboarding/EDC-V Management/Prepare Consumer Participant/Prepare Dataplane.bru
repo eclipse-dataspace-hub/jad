@@ -16,7 +16,13 @@ body:json {
     "transferTypes": [
       "https://w3id.org/dspace-sig/profile/http-pull"
     ],
-    "endpoint": "http://siglet.edc-v.svc.cluster.local:8081/api/v1/{{consumer_id}}/dataflows"
+    "endpoint": "http://siglet.edc-v.svc.cluster.local:8081/api/v1/{{consumer_id}}/dataflows",
+    "authorization": {
+      "type": "oauth2_token_exchange",
+      "tokenExchangeEndpoint": "http://jwtlet.edc-v.svc.cluster.local:8080/token",
+      "resource": "{{consumer_id}}",
+      "scope": "signaling"
+    }
   }
 }
 
