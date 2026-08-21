@@ -39,5 +39,11 @@ postgresql:
     # JAD-only: Redline UI database
     - { db: redlinedb,     user: redline, password: redline }
 
+edc:
+  siglet:
+    tokenApiAuth:
+      enabled: true
+      adminScope:
+        enabled: true
 
 # add other overrides here, such as image tags, pull policies, etc.

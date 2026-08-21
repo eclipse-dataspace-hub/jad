@@ -85,7 +85,7 @@ public class DataTransferEndToEndTest {
 
         var slug = Instant.now().getEpochSecond();
 
-        DYNAMIC_TOKEN_PROVIDER.setDefaultTokenGenerator(() -> TokenExchange.getParticipantToken("redline", "admin cfm-write cfm-read read write"));
+        DYNAMIC_TOKEN_PROVIDER.setDefaultTokenGenerator(() -> TokenExchange.getParticipantToken("redline", "admin cfm-write cfm-read read write siglet-token siglet-token:admin"));
 
         createMembershipCelExpression();
         createManufacturerCelExpression();

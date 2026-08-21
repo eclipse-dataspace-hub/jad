@@ -37,7 +37,7 @@ set -euo pipefail
 
 : "${IDP_TOKEN_ENDPOINT:=http://jad.localhost/api/auth/token}"
 : "${IDP_AUDIENCE:=edcv}" # audience the ingress expects
-: "${IDP_SCOPE:=admin cfm-write cfm-read read write}"
+: "${IDP_SCOPE:=admin cfm-write cfm-read read write siglet-token siglet-token:admin}"
 
 # ---- 1. mint the SA subject token ----------------------------------------
 kubectl_args=(create token "$KUBE_SA" -n "$KUBE_NS" --duration "$KUBE_TOKEN_DURATION")
