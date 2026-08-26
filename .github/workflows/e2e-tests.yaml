@@ -85,7 +85,7 @@ jobs:
           # Keep the version in sync with CPD_VERSION in run_e2e.sh — >= 0.0.17 for the
           # gateway-hostname DID scheme this repo's issuer/participant DIDs assume.
           helm upgrade --install core-platform oci://ghcr.io/eclipse-cfm/charts/core-platform-distribution \
-            --version 0.0.21 \
+            --version 0.0.22 \
             --namespace edc-v --create-namespace \
             -f platform-override-values.yaml \
             --wait --timeout 15m

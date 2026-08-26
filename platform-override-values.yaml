@@ -40,6 +40,9 @@ postgresql:
     - { db: redlinedb,     user: redline, password: redline }
 
 edc:
+  controlplane:
+    dataspaceProfiles:
+      enableAll: true
   siglet:
     tokenApiAuth:
       enabled: true
