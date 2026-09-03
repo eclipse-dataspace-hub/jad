@@ -14,7 +14,7 @@ security:
       - read
       - write
 paths:
-  /v5beta/participants/{participantContextId}/contractnegotiations/request:
+  /v5/participants/{participantContextId}/contractnegotiations/request:
     post:
       tags:
         - Contract Negotiation v5alpha
@@ -50,7 +50,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/api-error-schema"
-  /v5beta/participants/{participantContextId}/policydefinitions:
+  /v5/participants/{participantContextId}/policydefinitions:
     post:
       tags:
         - Policy Definition v5alpha
@@ -94,7 +94,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/api-error-schema"
-  /v5beta/participants/{participantContextId}/assets:
+  /v5/participants/{participantContextId}/assets:
     put:
       tags:
         - Asset v5alpha
@@ -172,7 +172,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ApiErrorDetail"
-  /v5beta/participants/{participantContextId}/assets/request:
+  /v5/participants/{participantContextId}/assets/request:
     post:
       tags:
         - Asset v5alpha
@@ -208,7 +208,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ApiErrorDetail"
-  /v5beta/participants/{participantContextId}/policydefinitions/{id}:
+  /v5/participants/{participantContextId}/policydefinitions/{id}:
     get:
       tags:
         - Policy Definition v5alpha
@@ -348,7 +348,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/api-error-schema"
-  /v5beta/celexpressions:
+  /v5/celexpressions:
     post:
       tags:
         - Cel Expressions v5alpha
@@ -388,7 +388,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/api-error-schema"
-  /v5beta/participants/{participantContextId}/transferprocesses/{id}/state:
+  /v5/participants/{participantContextId}/transferprocesses/{id}/state:
     get:
       tags:
         - Transfer Process v4beta
@@ -432,7 +432,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/api-error-schema"
-  /v5beta/celexpressions/{id}:
+  /v5/celexpressions/{id}:
     get:
       tags:
         - Cel Expressions v5alpha
@@ -573,7 +573,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/api-error-schema"
-  /v5beta/participants/{participantContextId}/contractagreements/{id}:
+  /v5/participants/{participantContextId}/contractagreements/{id}:
     get:
       tags:
         - Contract Agreement v5alpha
@@ -617,7 +617,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/api-error-schema"
-  /v5beta/participants/{participantContextId}/policydefinitions/{id}/validate:
+  /v5/participants/{participantContextId}/policydefinitions/{id}/validate:
     post:
       tags:
         - Policy Definition v5alpha
@@ -653,7 +653,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/api-error-schema"
-  /v5beta/participants/{participantContextId}/contractnegotiations/{id}/terminate:
+  /v5/participants/{participantContextId}/contractnegotiations/{id}/terminate:
     post:
       tags:
         - Contract Negotiation v5alpha
@@ -701,7 +701,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/api-error-schema"
-  /v5beta/participants/{participantContextId}/transferprocesses/{id}/terminate:
+  /v5/participants/{participantContextId}/transferprocesses/{id}/terminate:
     post:
       tags:
         - Transfer Process v4beta
@@ -762,7 +762,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/api-error-schema"
-  /v5beta/participants/{id}:
+  /v5/participants/{id}:
     get:
       tags:
         - Participant Context v5alpha
@@ -896,7 +896,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/api-error-schema"
-  /v5beta/participants/{participantContextId}/contractagreements/{id}/negotiation:
+  /v5/participants/{participantContextId}/contractagreements/{id}/negotiation:
     get:
       tags:
         - Contract Agreement v5alpha
@@ -940,7 +940,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/api-error-schema"
-  /v5beta/celexpressions/request:
+  /v5/celexpressions/request:
     post:
       tags:
         - Cel Expressions v5alpha
@@ -968,7 +968,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/api-error-schema"
-  /v5beta/participants/{participantContextId}/config:
+  /v5/participants/{participantContextId}/config:
     get:
       tags:
         - Participant Context config v5alpha
@@ -1061,7 +1061,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/api-error-schema"
-  /v5beta/participants/{participantContextId}/contractagreements/request:
+  /v5/participants/{participantContextId}/contractagreements/request:
     post:
       tags:
         - Contract Agreement v5alpha
@@ -1097,7 +1097,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/api-error-schema"
-  /v5beta/participants:
+  /v5/participants:
     get:
       tags:
         - Participant Context v5alpha
@@ -1193,7 +1193,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/api-error-schema"
-  /v5beta/participants/{participantContextId}/transferprocesses/{id}:
+  /v5/participants/{participantContextId}/transferprocesses/{id}:
     get:
       tags:
         - Transfer Process v4beta
@@ -1237,7 +1237,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/api-error-schema"
-  /v5beta/participants/{participantContextId}/catalog/request:
+  /v5/participants/{participantContextId}/catalog/request:
     post:
       tags:
         - Catalog v5alpha
@@ -1262,7 +1262,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/catalog-schema"
-  /v5beta/participants/{participantContextId}/contractnegotiations/{id}:
+  /v5/participants/{participantContextId}/contractnegotiations/{id}:
     get:
       tags:
         - Contract Negotiation v5alpha
@@ -1358,7 +1358,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/api-error-schema"
-  /v5beta/participants/{participantContextId}/contractdefinitions/request:
+  /v5/participants/{participantContextId}/contractdefinitions/request:
     post:
       tags:
         - Contract Definition v5alpha
@@ -1394,7 +1394,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/api-error-schema"
-  /v5beta/participants/{participantContextId}/transferprocesses/{id}/resume:
+  /v5/participants/{participantContextId}/transferprocesses/{id}/resume:
     post:
       tags:
         - Transfer Process v4beta
@@ -1440,7 +1440,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/api-error-schema"
-  /v5beta/participants/{participantContextId}/assets/{assetId}:
+  /v5/participants/{participantContextId}/assets/{assetId}:
     delete:
       tags:
         - Asset v5alpha
@@ -1493,7 +1493,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ApiErrorDetail"
-  /v5beta/participants/{participantContextId}/transferprocesses:
+  /v5/participants/{participantContextId}/transferprocesses:
     post:
       tags:
         - Transfer Process v4beta
@@ -1536,7 +1536,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/api-error-schema"
-  /v5beta/participants/{participantContextId}/transferprocesses/request:
+  /v5/participants/{participantContextId}/transferprocesses/request:
     post:
       tags:
         - Transfer Process v4beta
@@ -1572,7 +1572,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/api-error-schema"
-  /v5beta/participants/{participantContextId}/transferprocesses/{id}/suspend:
+  /v5/participants/{participantContextId}/transferprocesses/{id}/suspend:
     post:
       tags:
         - Transfer Process v4beta
@@ -1632,7 +1632,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/api-error-schema"
-  /v5beta/participants/{participantContextId}/assets/{id}:
+  /v5/participants/{participantContextId}/assets/{id}:
     get:
       tags:
         - Asset v5alpha
@@ -1676,7 +1676,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ApiErrorDetail"
-  /v5beta/participants/{participantContextId}/contractdefinitions/{id}:
+  /v5/participants/{participantContextId}/contractdefinitions/{id}:
     get:
       tags:
         - Contract Definition v5alpha
@@ -1762,7 +1762,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/api-error-schema"
-  /v5beta/participants/{participantContextId}/contractnegotiations/{id}/agreement:
+  /v5/participants/{participantContextId}/contractnegotiations/{id}/agreement:
     get:
       tags:
         - Contract Negotiation v5alpha
@@ -1808,7 +1808,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/api-error-schema"
-  /v5beta/participants/{participantContextId}/policydefinitions/request:
+  /v5/participants/{participantContextId}/policydefinitions/request:
     post:
       tags:
         - Policy Definition v5alpha
@@ -1844,7 +1844,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/api-error-schema"
-  /v5beta/participants/{participantContextId}/catalog/dataset/request:
+  /v5/participants/{participantContextId}/catalog/dataset/request:
     post:
       tags:
         - Catalog v5alpha
@@ -1869,7 +1869,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/dataset-schema"
-  /v5beta/participants/{participantContextId}/policydefinitions/{id}/evaluationplan:
+  /v5/participants/{participantContextId}/policydefinitions/{id}/evaluationplan:
     post:
       tags:
         - Policy Definition v5alpha
@@ -1910,7 +1910,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/api-error-schema"
-  /v5beta/participants/{participantContextId}/contractdefinitions:
+  /v5/participants/{participantContextId}/contractdefinitions:
     put:
       tags:
         - Contract Definition v5alpha
@@ -1992,7 +1992,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/api-error-schema"
-  /v5beta/participants/{participantContextId}/contractnegotiations:
+  /v5/participants/{participantContextId}/contractnegotiations:
     post:
       tags:
         - Contract Negotiation v5alpha
@@ -2035,7 +2035,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/api-error-schema"
-  /v5beta/participants/{participantContextId}/contractnegotiations/{id}/state:
+  /v5/participants/{participantContextId}/contractnegotiations/{id}/state:
     get:
       tags:
         - Contract Negotiation v5alpha

@@ -7,39 +7,39 @@ info:
     url: http://www.apache.org/licenses/LICENSE-2.0.txt
   version: 1.0.0-alpha
 servers:
-- url: http://ih.localhost/cs/api/identity
-  description: Local development server
+  - url: http://ih.localhost/cs/api/identity
+    description: Local development server
 security:
   - oauth2:
-    - read
-    - write
+      - read
+      - write
 paths:
-  /v1beta/credentials:
+  /v1/credentials:
     get:
       tags:
-      - Verifiable Credentials
+        - Verifiable Credentials
       description: Get all VerifiableCredentials across all Participant Contexts.
         Requires elevated access.
       operationId: getAllCredentials
       parameters:
-      - name: offset
-        in: query
-        required: false
-        style: form
-        explode: true
-        schema:
-          type: integer
-          format: int32
-          default: 0
-      - name: limit
-        in: query
-        required: false
-        style: form
-        explode: true
-        schema:
-          type: integer
-          format: int32
-          default: 50
+        - name: offset
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: integer
+            format: int32
+            default: 0
+        - name: limit
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: integer
+            format: int32
+            default: 50
       responses:
         "200":
           description: The list of VerifiableCredential resources.
@@ -66,27 +66,27 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ApiErrorDetail"
-  /v1beta/participants/{participantContextId}/credentials/request/{holderPid}:
+  /v1/participants/{participantContextId}/credentials/request/{holderPid}:
     get:
       tags:
-      - Verifiable Credentials
+        - Verifiable Credentials
       description: Finds a credential request by ID.
       operationId: getCredentialRequest
       parameters:
-      - name: participantContextId
-        in: path
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
-      - name: holderPid
-        in: path
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
+        - name: participantContextId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+        - name: holderPid
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
       responses:
         "200":
           description: The VerifiableCredential.
@@ -119,20 +119,20 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ApiErrorDetail"
-  /v1beta/participants/{participantContextId}:
+  /v1/participants/{participantContextId}:
     get:
       tags:
-      - Participant Context
+        - Participant Context
       description: Gets ParticipantContexts by ID.
       operationId: getParticipant
       parameters:
-      - name: participantContextId
-        in: path
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
+        - name: participantContextId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
       responses:
         "200":
           description: The list of ParticipantContexts.
@@ -165,32 +165,32 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ApiErrorDetail"
-  /v1beta/dids:
+  /v1/dids:
     get:
       tags:
-      - DID
+        - DID
       description: Get all DID documents across all Participant Contexts. Requires
         elevated access.
       operationId: getAllDids
       parameters:
-      - name: offset
-        in: query
-        required: false
-        style: form
-        explode: true
-        schema:
-          type: integer
-          format: int32
-          default: 0
-      - name: limit
-        in: query
-        required: false
-        style: form
-        explode: true
-        schema:
-          type: integer
-          format: int32
-          default: 50
+        - name: offset
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: integer
+            format: int32
+            default: 0
+        - name: limit
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: integer
+            format: int32
+            default: 50
       responses:
         "200":
           description: The list of DID Documents.
@@ -217,27 +217,27 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ApiErrorDetail"
-  /v1beta/participants/{participantContextId}/credentials:
+  /v1/participants/{participantContextId}/credentials:
     get:
       tags:
-      - Verifiable Credentials
+        - Verifiable Credentials
       description: Query VerifiableCredentials by type.
       operationId: queryCredentialsByType
       parameters:
-      - name: participantContextId
-        in: path
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
-      - name: type
-        in: query
-        required: false
-        style: form
-        explode: true
-        schema:
-          type: string
+        - name: participantContextId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+        - name: type
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
       responses:
         "200":
           description: The list of VerifiableCredentials.
@@ -264,21 +264,21 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ApiErrorDetail"
-  /v1beta/participants/{participantContextId}/credentials/request:
+  /v1/participants/{participantContextId}/credentials/request:
     post:
       tags:
-      - Verifiable Credentials
+        - Verifiable Credentials
       description: Triggers a credential request that is send to the issuer via the
         DCP protocol.
       operationId: requestCredential
       parameters:
-      - name: participantContextId
-        in: path
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
+        - name: participantContextId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
@@ -314,32 +314,32 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ApiErrorDetail"
-  /v1beta/keypairs:
+  /v1/keypairs:
     get:
       tags:
-      - Key Pairs
+        - Key Pairs
       description: Get all KeyPair resources across all Participant Contexts. Requires
         elevated access.
       operationId: getAllKeyPairs
       parameters:
-      - name: offset
-        in: query
-        required: false
-        style: form
-        explode: true
-        schema:
-          type: integer
-          format: int32
-          default: 0
-      - name: limit
-        in: query
-        required: false
-        style: form
-        explode: true
-        schema:
-          type: integer
-          format: int32
-          default: 50
+        - name: offset
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: integer
+            format: int32
+            default: 0
+        - name: limit
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: integer
+            format: int32
+            default: 50
       responses:
         "200":
           description: The list of KeyPair resources.
@@ -366,20 +366,20 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ApiErrorDetail"
-  /v1beta/participants/{participantContextId}/dids/state:
+  /v1/participants/{participantContextId}/dids/state:
     post:
       tags:
-      - DID
+        - DID
       description: Get state of a DID document
       operationId: getDidState
       parameters:
-      - name: participantContextId
-        in: path
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
+        - name: participantContextId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
@@ -405,20 +405,20 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ApiErrorDetail"
-  /v1beta/participants/{participantContextId}/keypairs:
+  /v1/participants/{participantContextId}/keypairs:
     get:
       tags:
-      - Key Pairs
+        - Key Pairs
       description: Finds all KeyPairResources for a particular ParticipantContext.
       operationId: queryKeyPairByParticipantContextId
       parameters:
-      - name: participantContextId
-        in: path
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
+        - name: participantContextId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
       responses:
         "200":
           description: The KeyPairResource.
@@ -455,26 +455,26 @@ paths:
                   $ref: "#/components/schemas/ApiErrorDetail"
     put:
       tags:
-      - Key Pairs
+        - Key Pairs
       description: "Adds a new key pair to a ParticipantContext. Note that the key\
         \ pair is either generated, or the private key is expected to be found in\
         \ the vault."
       operationId: addKeyPair
       parameters:
-      - name: participantContextId
-        in: path
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
-      - name: makeDefault
-        in: query
-        required: false
-        style: form
-        explode: true
-        schema:
-          type: boolean
+        - name: participantContextId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+        - name: makeDefault
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: boolean
       requestBody:
         content:
           application/json:
@@ -509,27 +509,27 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ApiErrorDetail"
-  /v1beta/participants/{participantContextId}/keypairs/{keyPairId}:
+  /v1/participants/{participantContextId}/keypairs/{keyPairId}:
     get:
       tags:
-      - Key Pairs
+        - Key Pairs
       description: Finds a KeyPairResource by ID.
       operationId: getKeyPair
       parameters:
-      - name: participantContextId
-        in: path
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
-      - name: keyPairId
-        in: path
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
+        - name: participantContextId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+        - name: keyPairId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
       responses:
         "200":
           description: The KeyPairResource.
@@ -562,32 +562,32 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ApiErrorDetail"
-  /v1beta/participants:
+  /v1/participants:
     get:
       tags:
-      - Participant Context
+        - Participant Context
       description: Get all DID documents across all Participant Contexts. Requires
         elevated access.
       operationId: getAllParticipants
       parameters:
-      - name: offset
-        in: query
-        required: false
-        style: form
-        explode: true
-        schema:
-          type: integer
-          format: int32
-          default: 0
-      - name: limit
-        in: query
-        required: false
-        style: form
-        explode: true
-        schema:
-          type: integer
-          format: int32
-          default: 50
+        - name: offset
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: integer
+            format: int32
+            default: 0
+        - name: limit
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: integer
+            format: int32
+            default: 50
       responses:
         "200":
           description: The list of ParticipantContexts.
@@ -614,28 +614,28 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ApiErrorDetail"
-  /v1beta/participants/{participantContextId}/keypairs/{keyPairId}/revoke:
+  /v1/participants/{participantContextId}/keypairs/{keyPairId}/revoke:
     post:
       tags:
-      - Key Pairs
+        - Key Pairs
       description: "Revokes (=removes) a particular key pair, identified by their\
         \ ID and create a new successor key."
       operationId: revokeKeyPair
       parameters:
-      - name: participantContextId
-        in: path
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
-      - name: keyPairId
-        in: path
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
+        - name: participantContextId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+        - name: keyPairId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
@@ -670,36 +670,36 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ApiErrorDetail"
-  /v1beta/participants/{participantContextId}/keypairs/{keyPairId}/rotate:
+  /v1/participants/{participantContextId}/keypairs/{keyPairId}/rotate:
     post:
       tags:
-      - Key Pairs
+        - Key Pairs
       description: "Rotates (=retires) a particular key pair, identified by their\
         \ ID and optionally create a new successor key."
       operationId: rotateKeyPair
       parameters:
-      - name: participantContextId
-        in: path
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
-      - name: keyPairId
-        in: path
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
-      - name: duration
-        in: query
-        required: false
-        style: form
-        explode: true
-        schema:
-          type: integer
-          format: int64
+        - name: participantContextId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+        - name: keyPairId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+        - name: duration
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: integer
+            format: int64
       requestBody:
         content:
           application/json:
@@ -755,16 +755,16 @@ components:
           type: string
           writeOnly: true
           enum:
-          - INITIAL
-          - REQUESTING
-          - REQUESTED
-          - ISSUING
-          - ISSUED
-          - REVOKED
-          - SUSPENDED
-          - EXPIRED
-          - NOT_YET_VALID
-          - ERROR
+            - INITIAL
+            - REQUESTING
+            - REQUESTED
+            - ISSUING
+            - ISSUED
+            - REVOKED
+            - SUSPENDED
+            - EXPIRED
+            - NOT_YET_VALID
+            - ERROR
         holderId:
           type: string
         id:
@@ -793,9 +793,9 @@ components:
         usage:
           type: string
           enum:
-          - Holder
-          - StatusList
-          - IssuanceTracking
+            - Holder
+            - StatusList
+            - IssuanceTracking
         verifiableCredential:
           $ref: "#/components/schemas/VerifiableCredentialContainer"
     Policy:
@@ -804,9 +804,9 @@ components:
         '@type':
           type: string
           enum:
-          - SET
-          - OFFER
-          - CONTRACT
+            - SET
+            - OFFER
+            - CONTRACT
         assignee:
           type: string
         assigner:
@@ -855,7 +855,7 @@ components:
           type: string
     Constraint:
       required:
-      - edctype
+        - edctype
       type: object
       properties:
         edctype:
@@ -896,11 +896,11 @@ components:
         format:
           type: string
           enum:
-          - VC1_0_LD
-          - VC1_0_JWT
-          - VC2_0_JOSE
-          - VC2_0_SD_JWT
-          - VC2_0_COSE
+            - VC1_0_LD
+            - VC1_0_JWT
+            - VC2_0_JOSE
+            - VC2_0_SD_JWT
+            - VC2_0_COSE
         rawVc:
           type: string
     VerifiableCredential:
@@ -921,8 +921,8 @@ components:
         dataModelVersion:
           type: string
           enum:
-          - V_1_1
-          - V_2_0
+            - V_1_1
+            - V_2_0
         description:
           type: string
         expirationDate:
@@ -1051,8 +1051,8 @@ components:
         sortOrder:
           type: string
           enum:
-          - ASC
-          - DESC
+            - ASC
+            - DESC
     Criterion:
       type: object
       properties:
@@ -1120,9 +1120,9 @@ components:
           items:
             type: string
             enum:
-            - sign_credentials
-            - sign_presentation
-            - sign_token
+              - sign_credentials
+              - sign_presentation
+              - sign_token
     IdentityHubParticipantContext:
       type: object
       properties:
@@ -1171,8 +1171,8 @@ components:
           $ref: "#/components/schemas/VerifiableCredentialContainer"
     CredentialRequestDto:
       required:
-      - credentials
-      - issuerDid
+        - credentials
+        - issuerDid
       type: object
       properties:
         credentials:
@@ -1229,9 +1229,9 @@ components:
           items:
             type: string
             enum:
-            - sign_credentials
-            - sign_presentation
-            - sign_token
+              - sign_credentials
+              - sign_presentation
+              - sign_token
         useDuration:
           type: integer
           format: int64

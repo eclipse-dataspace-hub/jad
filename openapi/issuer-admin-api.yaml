@@ -14,28 +14,28 @@ security:
       - read
       - write
 paths:
-  /v1beta/participants/{participantContextId}/credentials/{credentialId}/status:
+  /v1/participants/{participantContextId}/credentials/{credentialId}/status:
     get:
       tags:
-      - Issuer Service Credentials Admin API
+        - Issuer Service Credentials Admin API
       description: Checks the revocation status of a credential with the given ID
         for the given participant.
       operationId: checkCredentialStatus
       parameters:
-      - name: participantContextId
-        in: path
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
-      - name: credentialId
-        in: path
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
+        - name: participantContextId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+        - name: credentialId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
       responses:
         "200":
           description: The credential status.
@@ -64,20 +64,20 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ApiErrorDetail"
-  /v1beta/participants/{participantContextId}/holders/query:
+  /v1/participants/{participantContextId}/holders/query:
     post:
       tags:
-      - Issuer Service Holder Admin API
+        - Issuer Service Holder Admin API
       description: Gets all holders for a certain query.
       operationId: queryHolders
       parameters:
-      - name: participantContextId
-        in: path
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
+        - name: participantContextId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
@@ -117,27 +117,27 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ApiErrorDetail"
-  /v1beta/participants/{participantContextId}/holders/{holderId}:
+  /v1/participants/{participantContextId}/holders/{holderId}:
     get:
       tags:
-      - Issuer Service Holder Admin API
+        - Issuer Service Holder Admin API
       description: Gets metadata for a certain holder.
       operationId: getHolderById
       parameters:
-      - name: participantContextId
-        in: path
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
-      - name: holderId
-        in: path
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
+        - name: participantContextId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+        - name: holderId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
       responses:
         "200":
           description: A list of verifiable credential metadata. Note that these are
@@ -171,20 +171,20 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ApiErrorDetail"
-  /v1beta/participants/{participantContextId}/credentialdefinitions/query:
+  /v1/participants/{participantContextId}/credentialdefinitions/query:
     post:
       tags:
-      - Issuer Service Credential Definition Admin API
+        - Issuer Service Credential Definition Admin API
       description: Gets all credential definitions for a certain query.
       operationId: queryCredentialDefinitions
       parameters:
-      - name: participantContextId
-        in: path
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
+        - name: participantContextId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
@@ -216,27 +216,27 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ApiErrorDetail"
-  /v1beta/participants/{participantContextId}/credentialdefinitions/{credentialDefinitionId}:
+  /v1/participants/{participantContextId}/credentialdefinitions/{credentialDefinitionId}:
     get:
       tags:
-      - Issuer Service Credential Definition Admin API
+        - Issuer Service Credential Definition Admin API
       description: Gets a credential definition by its ID.
       operationId: getCredentialDefinitionById
       parameters:
-      - name: participantContextId
-        in: path
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
-      - name: credentialDefinitionId
-        in: path
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
+        - name: participantContextId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+        - name: credentialDefinitionId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
       responses:
         "200":
           description: The credential definition was found.
@@ -269,20 +269,20 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ApiErrorDetail"
-  /v1beta/participants/{participantContextId}/credentials/query:
+  /v1/participants/{participantContextId}/credentials/query:
     post:
       tags:
-      - Issuer Service Credentials Admin API
+        - Issuer Service Credentials Admin API
       description: "Query credentials, possibly across multiple participants."
       operationId: queryCredentials
       parameters:
-      - name: participantContextId
-        in: path
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
+        - name: participantContextId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
@@ -315,20 +315,20 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ApiErrorDetail"
-  /v1beta/participants/{participantContextId}/issuanceprocesses/query:
+  /v1/participants/{participantContextId}/issuanceprocesses/query:
     post:
       tags:
-      - Issuer Service Issuance Process Admin API
+        - Issuer Service Issuance Process Admin API
       description: Gets all issuance processes for a certain query.
       operationId: queryIssuanceProcesses
       parameters:
-      - name: participantContextId
-        in: path
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
+        - name: participantContextId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
@@ -360,27 +360,27 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ApiErrorDetail"
-  /v1beta/participants/{participantContextId}/issuanceprocesses/{issuanceProcessId}:
+  /v1/participants/{participantContextId}/issuanceprocesses/{issuanceProcessId}:
     get:
       tags:
-      - Issuer Service Issuance Process Admin API
+        - Issuer Service Issuance Process Admin API
       description: Gets an issuance process by its ID.
       operationId: getIssuanceProcessById
       parameters:
-      - name: participantContextId
-        in: path
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
-      - name: issuanceProcessId
-        in: path
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
+        - name: participantContextId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+        - name: issuanceProcessId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
       responses:
         "200":
           description: The issuance process was found.
@@ -448,8 +448,8 @@ components:
           type: string
     HolderDto:
       required:
-      - did
-      - holderId
+        - did
+        - holderId
       type: object
       properties:
         did:
@@ -505,8 +505,8 @@ components:
         sortOrder:
           type: string
           enum:
-          - ASC
-          - DESC
+            - ASC
+            - DESC
     Criterion:
       type: object
       properties:
@@ -616,8 +616,8 @@ components:
           format: int64
     CredentialOfferDto:
       required:
-      - credentials
-      - holderId
+        - credentials
+        - holderId
       type: object
       properties:
         credentials:
@@ -634,11 +634,11 @@ components:
         format:
           type: string
           enum:
-          - VC1_0_LD
-          - VC1_0_JWT
-          - VC2_0_JOSE
-          - VC2_0_SD_JWT
-          - VC2_0_COSE
+            - VC1_0_LD
+            - VC1_0_JWT
+            - VC2_0_JOSE
+            - VC2_0_SD_JWT
+            - VC2_0_COSE
         id:
           type: string
         participantContextId:
@@ -661,8 +661,8 @@ components:
         dataModelVersion:
           type: string
           enum:
-          - V_1_1
-          - V_2_0
+            - V_1_1
+            - V_2_0
         description:
           type: string
         expirationDate:
@@ -736,11 +736,11 @@ components:
           additionalProperties:
             type: string
             enum:
-            - VC1_0_LD
-            - VC1_0_JWT
-            - VC2_0_JOSE
-            - VC2_0_SD_JWT
-            - VC2_0_COSE
+              - VC1_0_LD
+              - VC1_0_JWT
+              - VC2_0_JOSE
+              - VC2_0_SD_JWT
+              - VC2_0_COSE
         holderId:
           type: string
         holderPid:
