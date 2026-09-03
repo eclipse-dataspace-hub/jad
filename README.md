@@ -79,17 +79,17 @@ With the Gateway API, there are three main ways to access services from outside 
   [`kind-config.yaml`](kind-config.yaml) maps those node ports onto the host. This is KinD-specific but requires no
   manual steps and no extra tooling. We use this approach here.
 
-- using port-forwarding: this is a manual way to forward ports from the host to the cluster. This is not
-  recommended for production use but works fine for local testing.
+- using port-forwarding: this is a manual way to forward ports from the host to the cluster. This is not recommended for
+  production use but works fine for local testing.
 
 - via a LoadBalancer service: this is typically used in cloud-hosted Kubernetes clusters, where the cloud provider
   provisions a load balancer automatically. This is the recommended approach for production use when running in
   cloud-hosted environments, and DNS names are used. For KinD, there is no built-in load balancer, but one can be
   installed
 
-- via `NodePort` services: this exposes services on high-numbered ports on the host machine. This is not
-  recommended for production use, and it gets complicated quickly when multiple services are involved, as is the case
-  here. _This is not shown here_.
+- via `NodePort` services: this exposes services on high-numbered ports on the host machine. This is not recommended for
+  production use, and it gets complicated quickly when multiple services are involved, as is the case here. _This is not
+  shown here_.
 
 ##### Option 1 (recommended): via hostPort + KinD port mappings
 
@@ -115,8 +115,7 @@ privileges on some systems.
 
 The KinD project provides
 a [cloud-like load balancer implementation](https://github.com/kubernetes-sigs/cloud-provider-kind). It emulates an
-external LB as you would get on cloud-hosted K8s clusters.
-Install it according to the instructions in the repository.
+external LB as you would get on cloud-hosted K8s clusters. Install it according to the instructions in the repository.
 
 Verify, that the `EXTERNAL-IP` of the `traefik` service is not yet assigned:
 
@@ -150,10 +149,9 @@ traefik   LoadBalancer   10.96.251.221   172.18.0.3    80:31415/TCP,443:31650/TC
 #### 2.1 Option 1: Use pre-built images
 
 There are pre-built images for all JAD apps available from [GHCR](https://github.com/eclipse-dataspace-hub/jad/packages)
-and the
-Connector Fabric Manager images are available from
-the [CFM GitHub Repository](https://github.com/eclipse-cfm/cfm/packages). Those are tested and we
-strongly recommend using them.
+and the Connector Fabric Manager images are available from
+the [CFM GitHub Repository](https://github.com/eclipse-cfm/cfm/packages). Those are tested and we strongly recommend
+using them.
 
 #### 2.2 Option 2: Build images from source
 
@@ -212,9 +210,8 @@ and now want to see it in action, please follow the following steps to build and
 
 #### 2.3 Build and deploy clearglass
 
-Clearglass is a small Rust application that acts as a reverse proxy for the JAD services and is described in more
-detail in a [later chapter](#jads-apis--a-single-pane-of-glass). It is being deployed as part of the base (or
-infrastructure)
+Clearglass is a small Rust application that acts as a reverse proxy for the JAD services and is described in more detail
+in a [later chapter](#jads-apis--a-single-pane-of-glass). It is being deployed as part of the base (or infrastructure)
 layer.
 
 For now, we have to build and load it manually using the following commands:
@@ -226,15 +223,15 @@ Clearglass is available in the CFM project: https://github.com/eclipse-cfm/clear
 JAD is deployed with Helm in two layers (see the
 [decision record](https://github.com/eclipse-cfm/.github/blob/main/docs/developer/decision-records/2026-07-01-core_platform_distro/README.md)):
 
-1. the **Core Platform Distribution** — the generic, reusable platform (connector, identity hub, issuer service,
-   siglet, CFM agents/managers, jwtlet/clearglass, gateway, infrastructure and generic seeding). It is maintained in
+1. the **Core Platform Distribution** — the generic, reusable platform (connector, identity hub, issuer service, siglet,
+   CFM agents/managers, jwtlet/clearglass, gateway, infrastructure and generic seeding). It is maintained in
    the [eclipse-cfm](https://github.com/eclipse-cfm) project and consumed as-is.
 2. the **JAD dataspace profile** — the dataspace-specific parts. It lives in this repo under
    [`charts/jad-dataspace-profile`](./charts/jad-dataspace-profile) and covers both the seeding (issuer credential
    definitions and the dataspace profile) and the **data plane**: a data plane is almost always specific to the data
-   space and/or the use case, so consequently, there is a JAD-specific one (it carries JAD's
-   certificate-exchange extensions). Its image is built from this repo (`ghcr.io/eclipse-dataspace-hub/jad/dataplane`,
-   see [`launchers/dataplane`](./launchers/dataplane)) and it is deployed directly by this chart, running in the same
+   space and/or the use case, so consequently, there is a JAD-specific one (it carries JAD's certificate-exchange
+   extensions). Its image is built from this repo (`ghcr.io/eclipse-dataspace-hub/jad/dataplane`, see [
+   `launchers/dataplane`](./launchers/dataplane)) and it is deployed directly by this chart, running in the same
    namespace and connecting to the platform's postgres/vault/nats services.
 
 The Core Platform Distribution is consumed from an OCI registry (the published chart bundles its infrastructure
@@ -308,13 +305,12 @@ Those are needed to populate the databases and the vault with initial data.
 In addition to the initial seed data, a few bits and pieces are required for it to become fully operational. These can
 be put in place by running the REST requests in the `CFM - Provision Consumer` folder and in the
 `CFM - Provision Provider`
-in the [Bruno collection](./requests/EDC-V%20Onboarding). Be sure to select the `"KinD Local"` environment in
-Bruno.
+in the [Bruno collection](./requests/EDC-V%20Onboarding). Be sure to select the `"KinD Local"` environment in Bruno.
 
 Since we switched to token exchange for authentication, the requests in the Bruno collection have been updated to use
 the `Authorization` with a fixed Bearer token. A token can be obtained by creating a service account token with
-`kubectl` and running the token exchange flow. The script `scripts/token.sh` does this
-automatically and print the access token. Run it and copy the token into the Bruno environment at collection level.
+`kubectl` and running the token exchange flow. The script `scripts/token.sh` does this automatically and print the
+access token. Run it and copy the token into the Bruno environment at collection level.
 
 ![bruno.png](docs/images/bruno.png)
 
@@ -336,9 +332,8 @@ the profile is activated.
 
 ## Seeding EDC-V CEL Expressions
 
-For evaluating policies EDC-V makes usage of the CEL (Common Expression Language) engine. To demonstrate this, we
-will create a simple CEL expression that allows data access only to participants that possess a valid Membership
-Credential.
+For evaluating policies EDC-V makes usage of the CEL (Common Expression Language) engine. To demonstrate this, we will
+create a simple CEL expression that allows data access only to participants that possess a valid Membership Credential.
 
 Run the requests in the `Create CEL expression` request in folder `EDC-V Management/Prepare consumer participant` in the
 same Bruno collection to create the CEL expression in the ControlPlane.
@@ -348,8 +343,8 @@ same Bruno collection to create the CEL expression in the ControlPlane.
 ## Seeding the Provider
 
 Before we can transfer data, we need to seed the Provider with an asset, a policy and a contract definition. This is
-done by running the requests in the `EDC-V Management/Provider` folder in the same Bruno collection. Again, make sure
-to select the
+done by running the requests in the `EDC-V Management/Provider` folder in the same Bruno collection. Again, make sure to
+select the
 `"KinD Local"` environment.
 
 ![img.png](docs/images/bruno_provider_seed.png)
@@ -358,23 +353,23 @@ to select the
 
 ## Transfer Data
 
-Now that both participants are set up, we can transfer data from the Provider to the Consumer.
-The only use case supported here:
+Now that both participants are set up, we can transfer data from the Provider to the Consumer. The only use case
+supported here:
 
 - Certificates sharing via HTTP
 
 ### Certificates sharing via HTTP
 
-The second use case demonstrates how certificates can be shared between participants using EDC-V's HTTP data
-transfer capabilities.
+The second use case demonstrates how certificates can be shared between participants using EDC-V's HTTP data transfer
+capabilities.
 
 First we need to upload a certificate to the Provider. This is done by running the
 `Data Transfer/Http Certs/Provider/Upload Certificate` request in Bruno:
 
 ![img.png](docs/images/bruno_upload_certificate.png)
 
-by selecting a file to upload (e.g. a `.pdf` file). Additional metadata can be provided in the request body using
-the `metadata` field.
+by selecting a file to upload (e.g. a `.pdf` file). Additional metadata can be provided in the request body using the
+`metadata` field.
 
 Then perform the entire sequence by running both requests in the `Data Transfer/Http Certs/Consumer` folder in Bruno:
 
@@ -429,33 +424,33 @@ This single pane of glass is called the `GlassAPI`. and is protected by an auth 
 are [here](#clearglass).
 
 Authentication is enforced at the gateway level using Traefik `ForwardAuth` middlewares. Each middleware forwards the
-`Authorization` header to the `clearglass` service, which validates the Bearer token against Keycloak via RFC 7662
-token introspection and checks for the required OAuth2 scopes. Services without a `middleware` entry listed are
+`Authorization` header to the `clearglass` service, which validates the Bearer token against Keycloak via RFC 7662 token
+introspection and checks for the required OAuth2 scopes. Services without a `middleware` entry listed are
 unauthenticated at the gateway level.
 
 ### Application routes (`jad.localhost`)
 
-| Service             | Exposed path        | Rewrites to            | Backend port | Auth middleware                        |
-|---------------------|---------------------|------------------------|--------------|----------------------------------------|
-| Control Plane       | `/api/management`   | `/api/mgmt`            | `8081`       | `jwt-auth`                             |
-| Identity Hub        | `/api/identity`     | `/api/identity/v1beta` | `7081`       | `jwt-auth`                             |
-| Issuer Service      | `/api/issuer/admin` | `/api/admin/v1beta`    | `10013`      | `jwt-auth`                             |
-| Provision Manager   | `/api/pm`           | `/api/v1beta`          | `8080`       | `jwt-auth`                             |
-| Tenant Manager      | `/api/tm`           | `/api/v1alpha1`        | `8080`       | `jwt-auth`                             |
-| Dataplane (public)  | `/api/dp/public`    | `/`                    | `11002`      | —                                      |
-| Dataplane (control) | `/api/dp/control`   | `/`                    | `8083`       | —                                      |
-| Dataplane (certs)   | `/api/dp/certs`     | `/`                    | `8186`       | —                                      |
-| Siglet              | `/api/siglet`       | `/`                    | `8080`       | —                                      |
-| Redline             | `/redline`          | `/`                    | `8081`       | —                                      |
-| Keycloak            | `/auth`             | `/`                    | `8080`       | — (is the auth server)                 |
-| Web UI              | `/ui`               | `/`                    | `80`         | — (obtains its own token via Keycloak) |
+| Service             | Exposed path        | Rewrites to        | Backend port | Auth middleware                        |
+|---------------------|---------------------|--------------------|--------------|----------------------------------------|
+| Control Plane       | `/api/management`   | `/api/mgmt`        | `8081`       | `jwt-auth`                             |
+| Identity Hub        | `/api/identity`     | `/api/identity/v1` | `7081`       | `jwt-auth`                             |
+| Issuer Service      | `/api/issuer/admin` | `/api/admin/v1`    | `10013`      | `jwt-auth`                             |
+| Provision Manager   | `/api/pm`           | `/api/v1beta`      | `8080`       | `jwt-auth`                             |
+| Tenant Manager      | `/api/tm`           | `/api/v1alpha1`    | `8080`       | `jwt-auth`                             |
+| Dataplane (public)  | `/api/dp/public`    | `/`                | `11002`      | —                                      |
+| Dataplane (control) | `/api/dp/control`   | `/`                | `8083`       | —                                      |
+| Dataplane (certs)   | `/api/dp/certs`     | `/`                | `8186`       | —                                      |
+| Siglet              | `/api/siglet`       | `/`                | `8080`       | —                                      |
+| Redline             | `/redline`          | `/`                | `8081`       | —                                      |
+| Keycloak            | `/auth`             | `/`                | `8080`       | — (is the auth server)                 |
+| Web UI              | `/ui`               | `/`                | `80`         | — (obtains its own token via Keycloak) |
 
 ### Auth middleware scopes
 
-All authenticated routes share the single scope-less `jwt-auth` middleware: clearglass derives the scope
-requirements from its route→scope map (`security.clearglass.routeMap.rules` in the Core Platform Distribution
-chart's `values.yaml`), evaluated first-match-wins with default deny and scope implication
-(`admin ⊇ write ⊇ read`, api-level covers resource-level). See
+All authenticated routes share the single scope-less `jwt-auth` middleware: clearglass derives the scope requirements
+from its route→scope map (`security.clearglass.routeMap.rules` in the Core Platform Distribution chart's `values.yaml`),
+evaluated first-match-wins with default deny and scope implication (`admin ⊇ write ⊇ read`, api-level covers
+resource-level). See
 [docs/token-exchange.md §4.3](docs/token-exchange.md) for the per-endpoint scope reference.
 
 ### Infrastructure routes (each on their own hostname)
@@ -481,19 +476,19 @@ The proxy performs two checks:
 1. **Token validation** — it calls Keycloak's RFC 7662 token introspection endpoint
    (`/realms/edcv/protocol/openid-connect/token/introspect`) using its own client credentials (`clearglass` /
    `clearglass-secret`) to verify that the Bearer token in the `Authorization` header is active.
-2. **Scope check** — the required OAuth2 scopes are passed as `?scope=` query parameters by each Traefik middleware.
-   The proxy checks that the token carries at least those scopes. If either check fails, the request is rejected with
+2. **Scope check** — the required OAuth2 scopes are passed as `?scope=` query parameters by each Traefik middleware. The
+   proxy checks that the token carries at least those scopes. If either check fails, the request is rejected with
    `401 Unauthorized` before it ever reaches the backend service.
 
-This design keeps authentication logic out of the individual services and centralizes it in one place, making it easy
-to add or modify access rules by updating the middleware definitions in the Core Platform Distribution chart
+This design keeps authentication logic out of the individual services and centralizes it in one place, making it easy to
+add or modify access rules by updating the middleware definitions in the Core Platform Distribution chart
 (`templates/security/jwt-middlewares.yaml`).
 
 ### Service-to-service authentication (jwtlet / token exchange)
 
-`clearglass` secures the **external** GlassAPI for human users. **In-cluster workloads** (the CFM
-agents, seed jobs, and your own apps) instead authenticate by exchanging their Kubernetes ServiceAccount token for a
-short-lived, scoped EDC token via **`jwtlet`** (RFC 8693). The EDC control plane, IdentityHub and IssuerService trust
+`clearglass` secures the **external** GlassAPI for human users. **In-cluster workloads** (the CFM agents, seed jobs, and
+your own apps) instead authenticate by exchanging their Kubernetes ServiceAccount token for a short-lived, scoped EDC
+token via **`jwtlet`** (RFC 8693). The EDC control plane, IdentityHub and IssuerService trust
 `jwtlet` as their OAuth2 issuer (`edc.iam.oauth2.issuer` / `jwks.url`).
 
 See [docs/token-exchange.md](docs/token-exchange.md) for the full picture: the exchange mechanism, the `jwtlet`
@@ -504,8 +499,8 @@ APIs, the scope model, and a step-by-step guide for onboarding a new client appl
 ### Rotate a participant's key material
 
 Keys should be rotated periodically to reduce the chance of all sorts of nasty attacks such as Lattice attacks or
-side-channel attacks. In practical applications, this would be done by a management application that uses the Glass
-API, like an admin dashboard, that periodically invokes these APIs here to perform the action.
+side-channel attacks. In practical applications, this would be done by a management application that uses the Glass API,
+like an admin dashboard, that periodically invokes these APIs here to perform the action.
 
 Participant keys are managed by IdentityHub and stored in a secure vault.
 
@@ -561,9 +556,9 @@ EDC-V, Keycloak and Vault will need to be accessible from outside the cluster. F
 plugin and an external load balancer. For bare-metal installations, consider using [MetalLB](https://metallb.io).
 
 In addition, you'll likely want DNS resolution for your cluster so that individual services can be reached via
-subdomains, e.g. `http://auth.yourdomain.com/`, `http://vault.yourdomain.com/`, `controlplane.yourdomain.com` etc.
-This must be configured with your DNS provider, and the specifics will vary greatly from one to the next. All entries
-should point to the IP address of the Kubernetes host, for example:
+subdomains, e.g. `http://auth.yourdomain.com/`, `http://vault.yourdomain.com/`, `controlplane.yourdomain.com` etc. This
+must be configured with your DNS provider, and the specifics will vary greatly from one to the next. All entries should
+point to the IP address of the Kubernetes host, for example:
 
 ![img.png](docs/images/dns.png)
 
@@ -634,11 +629,10 @@ Use the same subdomains you configured for the new Bruno environment.
 #### Tune readiness probes
 
 We've set up the readiness probes fairly tight, to avoid long wait times on local KinD clusters. However, in some
-Kubernetes
-clusters, these may need to be tuned to allow for longer periods and/or larger failure thresholds. In particular,
-KeyCloak takes a long time to start up, sometimes several minutes depending on the hardware.
-If the thresholds are too tight, then Keycloak may get hung up in endless restart loops: Kubernetes kills the pod
-before it reaches a healthy state.
+Kubernetes clusters, these may need to be tuned to allow for longer periods and/or larger failure thresholds. In
+particular, KeyCloak takes a long time to start up, sometimes several minutes depending on the hardware. If the
+thresholds are too tight, then Keycloak may get hung up in endless restart loops: Kubernetes kills the pod before it
+reaches a healthy state.
 
 To start, edit the `readinessProbe` section of the `keycloak` deployment manifest:
 
