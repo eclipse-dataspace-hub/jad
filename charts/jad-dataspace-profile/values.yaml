@@ -164,6 +164,24 @@ seedJobs:
     enabled: true
   dataspaceProfile:
     enabled: true
+  # DCP scopes (default + policy-mapped credential scopes) seeded on the EDC controlplane via
+  # its /v5/dcpscopes Management API. They used to be static edc.iam.dcp.scopes.* config in the
+  # core platform; they are dataspace-specific, so the profile chart owns them now.
+  dcpScopes:
+    enabled: true
+    # In-cluster controlplane Management API. The seed hits
+    # http://<service>.<namespace>.<clusterDomain>:<port><basePath>/v5/dcpscopes.
+    management:
+      service: controlplane
+      port: 8081
+      # Context path the connector serves the Management API under (the gateway
+      # httproute rewrites the external prefix to this).
+      basePath: /api/mgmt
+    # jwtlet token-exchange for the Management API. POST /v5/dcpscopes needs
+    # management-api:admin; the seed-jobs SA mapping (created by the platform jwtlet-seed)
+    # grants "admin" on the issuer participant context.
+    participantContextId: issuer
+    scope: admin
   # Demo Service Provider / Dataspace / Consumer+Provider tenants in Redline.
   redline:
     enabled: true
