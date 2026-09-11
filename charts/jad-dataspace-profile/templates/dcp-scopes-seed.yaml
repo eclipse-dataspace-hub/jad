@@ -1,0 +1,178 @@
+#
+# Copyright (c) 2026 Metaform Systems, Inc.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License, Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Contributors:
+#      Metaform Systems, Inc. - initial API and implementation
+#
+
+## Dataspace-specific seeding: the JAD DCP scopes on the EDC controlplane via its /v5
+## Management API. The DEFAULT scope (MembershipCredential) is requested on every DCP
+## presentation query; the POLICY scope (ManufacturerCredential) is requested whenever a
+## policy constraint's left operand carries the prefix mapping. These used to be static
+## edc.iam.dcp.scopes.* config in the core platform; they are dataspace-specific, so the
+## profile chart owns them now. Independent of the other seeds. Idempotent: HTTP 409 is
+## treated as "already present".
+
+{{- if .Values.seedJobs.dcpScopes.enabled }}
+{{- $cfg := .Values.seedJobs.dcpScopes }}
+{{- $cpFqdn := include "cpd.fqdn" (dict "svc" $cfg.management.service "ctx" $) }}
+{{- $edcBase := printf "http://%s:%v%s" $cpFqdn $cfg.management.port $cfg.management.basePath }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: dcp-scopes-seed
+  namespace: {{ include "cpd.namespace" . }}
+  labels:
+    app: dcp-scopes-seed
+    platform: edcv
+    type: edcv-job
+    {{- include "cpd.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "25"
+    "helm.sh/hook-delete-policy": {{ .Values.seedJobs.hookDeletePolicy | quote }}
+spec:
+  backoffLimit: 5
+  ttlSecondsAfterFinished: {{ .Values.seedJobs.ttlSecondsAfterFinished }}
+  template:
+    metadata:
+      labels:
+        app: dcp-scopes-seed
+        platform: edcv
+        type: edcv-job
+    spec:
+      serviceAccountName: {{ .Values.seedJobs.serviceAccountName }}
+      restartPolicy: OnFailure
+      initContainers:
+        # Wait for the controlplane to be ready
+        - name: wait-for-controlplane
+          image: {{ .Values.seedJobs.images.curl }}
+          command:
+            - sh
+            - -c
+            - |
+              until curl -sf http://{{ $cpFqdn }}:8080/api/check/readiness; do
+                echo "Waiting for controlplane to be ready..."
+                sleep 5
+              done
+              echo ""
+              echo "Controlplane is ready!"
+      containers:
+        - name: seed-dcp-scopes
+          image: {{ .Values.seedJobs.images.curl }}
+          env:
+            - name: EDC_BASE
+              value: {{ $edcBase | quote }}
+            - name: JWTLET_TOKEN_URL
+              value: "http://{{ include "cpd.fqdn" (dict "svc" "jwtlet" "ctx" $) }}:8080/token"
+          volumeMounts:
+            - name: jwtlet-subject-token
+              mountPath: /var/run/secrets/jwtlet
+              readOnly: true
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+
+              # Executes a curl request and stores the response body in RESP_BODY and status code in RESP_STATUS.
+              do_curl() {
+                RESP=$(curl -s -w "\n%{http_code}" "$@")
+                RESP_STATUS=$(printf '%s\n' "$RESP" | tail -1)
+                RESP_BODY=$(printf '%s\n' "$RESP" | sed '$d')
+              }
+
+              # seed <label> <endpoint>  — POSTs the JSON body read from stdin to
+              # $EDC_BASE/v5/<endpoint>. HTTP 409 is tolerated (already present).
+              seed() {
+                RESP=$(curl -s -w "\n%{http_code}" -X POST "${EDC_BASE}/v5/$2" \
+                  -H "Authorization: Bearer ${EXCHANGED_TOKEN}" \
+                  -H "Content-Type: application/json" \
+                  --data @-)
+                RESP_STATUS=$(printf '%s\n' "$RESP" | tail -1)
+                RESP_BODY=$(printf '%s\n' "$RESP" | sed '$d')
+                if [ "$RESP_STATUS" -eq 409 ]; then
+                  echo "⚠ $1 already present"
+                elif [ "$RESP_STATUS" -ge 400 ]; then
+                  echo "ERROR: $1 failed (HTTP $RESP_STATUS): $RESP_BODY"
+                  exit 1
+                else
+                  echo "✓ $1 created"
+                fi
+              }
+
+              SA_TOKEN=$(cat /var/run/secrets/jwtlet/token)
+              if [ -z "$SA_TOKEN" ]; then
+                echo "ERROR: subject token at /var/run/secrets/jwtlet/token is empty"
+                exit 1
+              fi
+
+              echo "================================================"
+              echo "Obtain Management-API token"
+              echo "================================================"
+
+              # exchange SA token for a management-api scoped token (POST /v5/dcpscopes needs management-api:admin)
+              do_curl -X POST "${JWTLET_TOKEN_URL}" \
+                -H "Content-Type: application/x-www-form-urlencoded" \
+                --data-urlencode "grant_type=urn:ietf:params:oauth:grant-type:token-exchange" \
+                --data-urlencode "subject_token=${SA_TOKEN}" \
+                --data-urlencode "subject_token_type=urn:ietf:params:oauth:token-type:jwt" \
+                --data-urlencode "resource={{ $cfg.participantContextId }}" \
+                --data-urlencode "scope={{ $cfg.scope }}" \
+                --data-urlencode "audience={{ .Values.global.tokenExchangeAudience }}"
+              if [ "$RESP_STATUS" -ge 400 ]; then
+                echo "ERROR: Failed to exchange SA token (HTTP $RESP_STATUS): $RESP_BODY"
+                exit 1
+              fi
+              EXCHANGED_TOKEN=$(printf '%s\n' "$RESP_BODY" | sed -n 's/.*"access_token":"\([^"]*\)".*/\1/p')
+              if [ -z "$EXCHANGED_TOKEN" ]; then
+                echo "ERROR: Failed to parse exchanged token from response: $RESP_BODY"
+                exit 1
+              fi
+              echo "✓ Management-API token obtained"
+
+              echo ""
+              echo "================================================"
+              echo "Create DCP scopes"
+              echo "================================================"
+              # profile "*" applies to every dataspace profile (the platform runs with
+              # edc.dataspace.enable.profiles.all=true and JAD seeds no named profile).
+              seed "DCP scope MembershipCredential" "dcpscopes" <<'JSON'
+              {
+                "@context": [
+                  "https://w3id.org/edc/connector/management/v2"
+                ],
+                "@type": "DcpScope",
+                "@id": "membership-scope",
+                "type": "DEFAULT",
+                "value": "org.eclipse.dspace.dcp.vc.type:MembershipCredential:read",
+                "profile": "*"
+              }
+              JSON
+              seed "DCP scope ManufacturerCredential" "dcpscopes" <<'JSON'
+              {
+                "@context": [
+                  "https://w3id.org/edc/connector/management/v2"
+                ],
+                "@type": "DcpScope",
+                "@id": "manufacturer-scope",
+                "type": "POLICY",
+                "value": "org.eclipse.dspace.dcp.vc.type:ManufacturerCredential:read",
+                "prefixMapping": "ManufacturerCredential",
+                "profile": "*"
+              }
+              JSON
+
+              echo ""
+              echo "================================================"
+              echo "DCP scope seeding completed successfully!"
+              echo "================================================"
+      volumes:
+        {{- include "cpd.jwtletSubjectTokenVolume" . | nindent 8 }}
+{{- end }}

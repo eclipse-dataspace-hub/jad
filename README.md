@@ -228,7 +228,7 @@ JAD is deployed with Helm in two layers (see the
    the [eclipse-cfm](https://github.com/eclipse-cfm) project and consumed as-is.
 2. the **JAD dataspace profile** — the dataspace-specific parts. It lives in this repo under
    [`charts/jad-dataspace-profile`](./charts/jad-dataspace-profile) and covers both the seeding (issuer credential
-   definitions and the dataspace profile) and the **data plane**: a data plane is almost always specific to the data
+   definitions, the dataspace profile and the controlplane DCP scopes) and the **data plane**: a data plane is almost always specific to the data
    space and/or the use case, so consequently, there is a JAD-specific one (it carries JAD's certificate-exchange
    extensions). Its image is built from this repo (`ghcr.io/eclipse-dataspace-hub/jad/dataplane`, see [
    `launchers/dataplane`](./launchers/dataplane)) and it is deployed directly by this chart, running in the same
