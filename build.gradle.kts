@@ -21,13 +21,6 @@ plugins {
     alias(libs.plugins.edc.build)
 }
 
-buildscript {
-    dependencies {
-        val version: String by project
-        classpath("org.eclipse.edc.autodoc:org.eclipse.edc.autodoc.gradle.plugin:$version")
-    }
-}
-
 val edcBuildId = libs.plugins.edc.build.get().pluginId
 val jadVersion: String by project
 
@@ -45,12 +38,6 @@ val downloadOtelAgent by tasks.register("downloadOtelAgent", Copy::class) {
 
 allprojects {
     apply(plugin = edcBuildId)
-    apply(plugin = "org.eclipse.edc.autodoc")
-
-    // configure which version of the annotation processor to use. defaults to the same version as the plugin
-    configure<org.eclipse.edc.plugins.autodoc.AutodocExtension> {
-        outputDirectory.set(project.layout.buildDirectory.asFile)
-    }
 }
 subprojects {
     afterEvaluate {
