@@ -44,6 +44,8 @@ edc:
     dataspaceProfiles:
       enableAll: true
   siglet:
+    refreshEndpointPolicy:
+      allowHttp: true
     tokenApiAuth:
       enabled: true
       adminScope:
