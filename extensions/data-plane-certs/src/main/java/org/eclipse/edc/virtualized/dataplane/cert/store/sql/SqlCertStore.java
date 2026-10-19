@@ -14,7 +14,6 @@
 
 package org.eclipse.edc.virtualized.dataplane.cert.store.sql;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.edc.spi.EdcException;
 import org.eclipse.edc.spi.query.QuerySpec;
 import org.eclipse.edc.sql.QueryExecutor;
@@ -24,6 +23,7 @@ import org.eclipse.edc.transaction.datasource.spi.DataSourceRegistry;
 import org.eclipse.edc.transaction.spi.TransactionContext;
 import org.eclipse.edc.virtualized.dataplane.cert.model.CertMetadata;
 import org.eclipse.edc.virtualized.dataplane.cert.store.CertStore;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.InputStream;
 import java.sql.ResultSet;
