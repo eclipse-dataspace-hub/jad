@@ -14,11 +14,10 @@
 
 package org.eclipse.edc.jad.tests;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.RestAssured;
 import io.restassured.config.ObjectMapperConfig;
 import io.restassured.config.RestAssuredConfig;
+import io.restassured.mapper.ObjectMapperType;
 import io.restassured.specification.RequestSpecification;
 import org.eclipse.edc.connector.controlplane.test.system.utils.client.ManagementApiClientV5;
 import org.eclipse.edc.connector.controlplane.test.system.utils.client.api.model.AssetDto;
@@ -39,6 +38,8 @@ import org.eclipse.edc.junit.utils.LazySupplier;
 import org.eclipse.edc.spi.monitor.ConsoleMonitor;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.net.URI;
 import java.time.Instant;
@@ -75,12 +76,11 @@ public class KeyRotationEndToEndTest {
     @BeforeAll
     static void prepare() {
         // globally disable failing on unknown properties for RestAssured
-        RestAssured.config = RestAssuredConfig.config().objectMapperConfig(new ObjectMapperConfig().jackson2ObjectMapperFactory(
-                (cls, charset) -> {
-                    ObjectMapper om = new ObjectMapper().findAndRegisterModules();
-                    om.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-                    return om;
-                }
+        RestAssured.config = RestAssuredConfig.config().objectMapperConfig(new ObjectMapperConfig(ObjectMapperType.JACKSON_3).jackson3ObjectMapperFactory(
+                (cls, charset) -> JsonMapper.builder()
+                        .findAndAddModules()
+                        .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                        .build()
         ));
         var slug = Instant.now().getEpochSecond();
 

@@ -14,7 +14,6 @@
 
 package org.eclipse.edc.virtualized.dataplane.cert.api;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -31,6 +30,7 @@ import org.eclipse.edc.virtualized.dataplane.cert.model.ActivityItem;
 import org.eclipse.edc.virtualized.dataplane.cert.model.CertMetadata;
 import org.eclipse.edc.virtualized.dataplane.cert.store.CertStore;
 import org.jetbrains.annotations.NotNull;
+import tools.jackson.core.type.TypeReference;
 
 import java.io.InputStream;
 import java.time.Instant;
