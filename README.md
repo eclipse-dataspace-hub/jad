@@ -239,7 +239,7 @@ sub-charts). Install the platform first and the dataspace profile second, into t
 
 ```shell
 # 1) the generic platform (ordered install/upgrade hooks handle bootstrap + generic seeding)
-# Note: if you would like to install a certain version of the platform, specify the --version 0.0.33 parameter
+# Note: if you would like to install a certain version of the platform, specify the --version 0.0.34 parameter
 helm upgrade --install core-platform oci://ghcr.io/eclipse-cfm/charts/core-platform-distribution \
   --namespace edc-v --create-namespace \
   --version <VERSION> \
@@ -613,7 +613,7 @@ The `HTTPRoute` hostnames are Helm values rather than hardcoded manifest fields.
 install time to match your DNS, e.g.:
 
 ```shell
-helm upgrade --install core-platform oci://ghcr.io/eclipse-cfm/charts/core-platform-distribution --version 0.0.33 \
+helm upgrade --install core-platform oci://ghcr.io/eclipse-cfm/charts/core-platform-distribution --version 0.0.34 \
   --namespace edc-v --create-namespace \
   --set global.host=jad.yourdomain.com \
   --set telemetry.grafana.host=grafana.yourdomain.com
