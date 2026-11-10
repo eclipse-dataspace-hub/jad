@@ -24,7 +24,6 @@ import org.eclipse.edc.connector.controlplane.test.system.utils.client.api.model
 import org.eclipse.edc.connector.controlplane.test.system.utils.client.api.model.AtomicConstraintDto;
 import org.eclipse.edc.connector.controlplane.test.system.utils.client.api.model.ContractDefinitionDto;
 import org.eclipse.edc.connector.controlplane.test.system.utils.client.api.model.CriterionDto;
-import org.eclipse.edc.connector.controlplane.test.system.utils.client.api.model.DataPlaneRegistrationDto;
 import org.eclipse.edc.connector.controlplane.test.system.utils.client.api.model.PermissionDto;
 import org.eclipse.edc.connector.controlplane.test.system.utils.client.api.model.PolicyDefinitionDto;
 import org.eclipse.edc.connector.controlplane.test.system.utils.client.api.model.PolicyDto;
@@ -47,7 +46,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 import static io.restassured.RestAssured.given;
@@ -210,13 +208,7 @@ public class KeyRotationEndToEndTest {
      * @param participantContextId Participant context for which the data plane should be registered.
      */
     private void registerDataPlane(String participantContextId) {
-        MANAGEMENT_API_CLIENT.dataplanes().registerDataPlane(participantContextId, new DataPlaneRegistrationDto(
-                "dataplane-%s".formatted(participantContextId),
-                "http://siglet.edc-v.svc.cluster.local:8081/api/v1/%s/dataflows".formatted(participantContextId),
-                Set.of("https://w3id.org/dspace-sig/profile/http-pull"),
-                Set.of(),
-                null
-        ));
+        DataPlaneRegistration.register(MANAGEMENT_API_CLIENT, participantContextId, null);
     }
 
     private String createAsset(String participantContextId, String description) {

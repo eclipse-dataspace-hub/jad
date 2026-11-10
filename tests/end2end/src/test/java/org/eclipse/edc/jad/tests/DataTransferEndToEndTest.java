@@ -24,7 +24,6 @@ import org.eclipse.edc.connector.controlplane.test.system.utils.client.api.model
 import org.eclipse.edc.connector.controlplane.test.system.utils.client.api.model.CelExpressionDto;
 import org.eclipse.edc.connector.controlplane.test.system.utils.client.api.model.ContractDefinitionDto;
 import org.eclipse.edc.connector.controlplane.test.system.utils.client.api.model.CriterionDto;
-import org.eclipse.edc.connector.controlplane.test.system.utils.client.api.model.DataPlaneRegistrationDto;
 import org.eclipse.edc.connector.controlplane.test.system.utils.client.api.model.PermissionDto;
 import org.eclipse.edc.connector.controlplane.test.system.utils.client.api.model.PolicyDefinitionDto;
 import org.eclipse.edc.connector.controlplane.test.system.utils.client.api.model.PolicyDto;
@@ -258,16 +257,11 @@ public class DataTransferEndToEndTest {
      * @param participantContextId Participant context for which the data plane should be registered.
      */
     private void registerDataPlane(String participantContextId) {
-        MANAGEMENT_API_CLIENT.dataplanes().registerDataPlane(participantContextId, new DataPlaneRegistrationDto(
-                "dataplane-%s".formatted(participantContextId),
-                "http://siglet.edc-v.svc.cluster.local:8081/api/v1/%s/dataflows".formatted(participantContextId),
-                Set.of("https://w3id.org/dspace-sig/profile/http-pull"),
-                Set.of(),
+        DataPlaneRegistration.register(MANAGEMENT_API_CLIENT, participantContextId,
                 Map.of("type", "oauth2_token_exchange",
                         "tokenExchangeEndpoint", "http://jwtlet.edc-v.svc.cluster.local:8080/token",
                         "resource", participantContextId,
-                        "scope", "signaling")
-        ));
+                        "scope", "signaling"));
     }
 
     private String createAsset(String participantContextId, String description) {
