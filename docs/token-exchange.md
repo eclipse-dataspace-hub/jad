@@ -310,8 +310,8 @@ are:
 | `management-api`        | Control plane     | `:admin`, `:read`, `:write`, `:*:read`, `:*:write`, and per-resource: `agreements:read`, `assets:read/write`, `catalog:read`, `contractdefinitions:read/write`, `dataplanes:write`, `discovery:read`, `negotiations:read/write`, `policies:read/write`, `profiles:read/write`, `transfers:read/write` |
 | `identity-api`          | IdentityHub       | `:admin`, `:read`, `:write`, `:*:read`, `:*:write`, and per-resource: `participants:read/write`, `dids:read/write`, `keypairs:read/write`, `credentials:read/write`                                                                                                                                   |
 | `issuer-admin-api`      | IssuerService     | `:admin`, `:read`, `:write`, `:*:read`, `:*:write`, and per-resource: `attestations:read/write`, `credentialdefinitions:read/write`, `credentials:read/write`, `holders:read/write`, `issuanceprocesses:read`                                                                                         |
-| `provision-manager-api` | Provision Manager | `:read`, `:write` (api-level only)                                                                                                                                                                                                                                                                    |
-| `tenant-manager-api`    | Tenant Manager    | `:read`, `:write` (api-level only)                                                                                                                                                                                                                                                                    |
+| `provision-manager-api` | Provision Manager | `:read`, `:write`, `:admin` (api-level only)                                                                                                                                                                                                                                                          |
+| `tenant-manager-api`    | Tenant Manager    | `:read`, `:write`, `:admin` (api-level only)                                                                                                                                                                                                                                                          |
 | `siglet-mgmt-api`       | Siglet            | `:read`, `:write` (api-level only)                                                                                                                                                                                                                                                                    |
 
 (Read the table as `<namespace>:<suffix>`, e.g. `management-api:assets:write`, `identity-api:*:read`,
@@ -328,7 +328,7 @@ coarse multi-API claim:
 | `write`        | `identity-api:write management-api:write issuer-admin-api:write`              |
 | `admin`        | `management-api:admin identity-api:admin issuer-admin-api:admin`              |
 | `cfm-read`     | `provision-manager-api:read tenant-manager-api:read`                          |
-| `cfm-write`    | `provision-manager-api:write tenant-manager-api:write`                        |
+| `cfm-write`    | `provision-manager-api:write tenant-manager-api:write provision-manager-api:admin tenant-manager-api:admin` |
 | `siglet-read`  | `siglet-mgmt-api:read`                                                        |
 | `siglet-write` | `siglet-mgmt-api:write`                                                       |
 
@@ -400,7 +400,7 @@ The legacy coarse tiers satisfy requirements per their expansion (§4.2):
 | API namespace                                        | `…:read` satisfied by tier            | `…:write` satisfied by tier | `…:admin` satisfied by tier |
 |------------------------------------------------------|---------------------------------------|-----------------------------|-----------------------------|
 | `management-api`, `identity-api`, `issuer-admin-api` | `read`, `write`, `admin`              | `write`, `admin`            | `admin`                     |
-| `tenant-manager-api`, `provision-manager-api`        | `cfm-read`, `cfm-write`               | `cfm-write`                 | —                           |
+| `tenant-manager-api`, `provision-manager-api`        | `cfm-read`, `cfm-write`               | `cfm-write`                 | `cfm-write`                 |
 | `siglet-mgmt-api`                                    | `siglet-read`, `siglet-write`, `read` | `siglet-write`              | —                           |
 
 #### Control plane Management API — external base `/api/management/v5`
@@ -464,22 +464,26 @@ The legacy coarse tiers satisfy requirements per their expansion (§4.2):
 
 #### CFM Tenant Manager — external base `/api/tm`
 
-All Tenant Manager resources (`tenants`, `tenants/*/participant-profiles`, `cells`, `dataspace-profiles`,
-`participant-profiles`) follow the same pattern:
+Reads on all Tenant Manager resources (`tenants`, `tenants/*/participant-profiles`, `cells`, `dataspace-profiles`,
+`participant-profiles`) follow the same pattern. Writes distinguish tenant-owned resources from the shared ones:
+`cells` and `dataspace-profiles` are shared by all tenants, so changing them needs the admin scope.
 
-| Method(s)           | Endpoint (below base)       | Narrowest required scope   |
-|---------------------|-----------------------------|----------------------------|
-| GET, POST `…/query` | any Tenant Manager resource | `tenant-manager-api:read`  |
-| POST, PATCH, DELETE | any Tenant Manager resource | `tenant-manager-api:write` |
+| Method(s)           | Endpoint (below base)                              | Narrowest required scope   |
+|---------------------|----------------------------------------------------|----------------------------|
+| GET, POST `…/query` | any Tenant Manager resource                        | `tenant-manager-api:read`  |
+| POST, PATCH, DELETE | `tenants`, `tenants/*/…`, `participant-profiles`   | `tenant-manager-api:write` |
+| POST, PATCH, DELETE | `cells`, `dataspace-profiles`                      | `tenant-manager-api:admin` |
 
 #### CFM Provision Manager — external base `/api/pm`
 
-Likewise for the Provision Manager resources (`orchestrations`, `activity-definitions`, `orchestration-definitions`):
+Likewise for the Provision Manager resources (`orchestrations`, `activity-definitions`, `orchestration-definitions`);
+changing the (shared) definitions needs the admin scope:
 
-| Method(s)           | Endpoint (below base)          | Narrowest required scope      |
-|---------------------|--------------------------------|-------------------------------|
-| GET, POST `…/query` | any Provision Manager resource | `provision-manager-api:read`  |
-| POST, DELETE        | any Provision Manager resource | `provision-manager-api:write` |
+| Method(s)           | Endpoint (below base)                                 | Narrowest required scope      |
+|---------------------|-------------------------------------------------------|-------------------------------|
+| GET, POST `…/query` | any Provision Manager resource                        | `provision-manager-api:read`  |
+| POST, DELETE        | `orchestrations`                                      | `provision-manager-api:write` |
+| POST, DELETE        | `activity-definitions`, `orchestration-definitions`   | `provision-manager-api:admin` |
 
 #### Siglet — external base `/api/siglet`
 
