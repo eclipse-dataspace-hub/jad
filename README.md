@@ -150,8 +150,9 @@ traefik   LoadBalancer   10.96.251.221   172.18.0.3    80:31415/TCP,443:31650/TC
 
 There are pre-built images for all JAD apps available from [GHCR](https://github.com/eclipse-dataspace-hub/jad/packages)
 and the Connector Fabric Manager images are available from
-the [CFM GitHub Repository](https://github.com/eclipse-cfm/cfm/packages). Those are tested and we strongly recommend
-using them.
+the [CFM GitHub Repository](https://github.com/eclipse-cfm/cfm/packages) (Provision Manager) and
+the [CFM Dataspace GitHub Repository](https://github.com/eclipse-cfm/cfm-dataspace/packages) (Tenant Manager and
+agents). Those are tested and we strongly recommend using them.
 
 #### 2.2 Option 2: Build images from source
 
@@ -239,7 +240,7 @@ sub-charts). Install the platform first and the dataspace profile second, into t
 
 ```shell
 # 1) the generic platform (ordered install/upgrade hooks handle bootstrap + generic seeding)
-# Note: if you would like to install a certain version of the platform, specify the --version 0.0.43 parameter
+# Note: if you would like to install a certain version of the platform, specify the --version 0.0.44 parameter
 helm upgrade --install core-platform oci://ghcr.io/eclipse-cfm/charts/core-platform-distribution \
   --namespace edc-v --create-namespace \
   --version <VERSION> \
@@ -613,7 +614,7 @@ The `HTTPRoute` hostnames are Helm values rather than hardcoded manifest fields.
 install time to match your DNS, e.g.:
 
 ```shell
-helm upgrade --install core-platform oci://ghcr.io/eclipse-cfm/charts/core-platform-distribution --version 0.0.43 \
+helm upgrade --install core-platform oci://ghcr.io/eclipse-cfm/charts/core-platform-distribution --version 0.0.44 \
   --namespace edc-v --create-namespace \
   --set global.host=jad.yourdomain.com \
   --set telemetry.grafana.host=grafana.yourdomain.com
